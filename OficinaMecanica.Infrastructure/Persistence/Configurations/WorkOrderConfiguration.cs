@@ -90,6 +90,9 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
                 services.HasKey("id")
                     .HasName("pk_work_order_services");
 
+                services.Property(s => s.ServiceId)
+                    .IsRequired();
+
                 services.Property(s => s.Description)
                     .IsRequired()
                     .HasMaxLength(500);
@@ -129,6 +132,9 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
 
                 parts.HasKey("id")
                     .HasName("pk_work_order_parts");
+
+                parts.Property(p => p.PartId)
+                    .IsRequired();
 
                 parts.Property(p => p.Code)
                     .IsRequired()

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OficinaMecanica.Application.Interfaces.Repositories;
@@ -31,6 +30,8 @@ namespace OficinaMecanica.Infrastructure
             services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IVehicleRepository, VehicleRepository>();
+            services.AddScoped<IServiceRepository, ServiceRepository>();
+            services.AddScoped<IPartRepository, PartRepository>();
 
             services.AddScoped<IWorkOrderNumberGenerator, WorkOrderNumberGenerator>();
 
@@ -38,3 +39,4 @@ namespace OficinaMecanica.Infrastructure
         }
     }
 }
+

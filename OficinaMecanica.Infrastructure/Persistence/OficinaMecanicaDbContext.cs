@@ -11,6 +11,10 @@ namespace OficinaMecanica.Infrastructure.Persistence
         }
 
         public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+        public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+        public DbSet<Service> Services => Set<Service>();
+        public DbSet<Part> Parts => Set<Part>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -27,13 +27,13 @@ namespace OficinaMecanica.Infrastructure
                             errorCodesToAdd: null);
                     }));
 
-            services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
-            services.AddScoped<ICustomerRepository, CustomerRepository>();
-            services.AddScoped<IVehicleRepository, VehicleRepository>();
-            services.AddScoped<IServiceRepository, ServiceRepository>();
-            services.AddScoped<IPartRepository, PartRepository>();
+            services.AddScoped<IOrdemServicoRepository, OrdemServicoRepository>();
+            services.AddScoped<IClienteRepository, ClienteRepository>();
+            services.AddScoped<IVeiculoRepository, VeiculoRepository>();
+            services.AddScoped<IServicoRepository, ServicoRepository>();
+            services.AddScoped<IPecaRepository, PecaRepository>();
 
-            services.AddScoped<IWorkOrderNumberGenerator, WorkOrderNumberGenerator>();
+            services.AddScoped<IGeradorNumeroOrdemServico, GeradorNumeroOrdemServico>();
 
             return services;
         }

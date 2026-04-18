@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Infrastructure.Persistence.Repositories
 {
@@ -17,7 +18,10 @@ namespace OficinaMecanica.Infrastructure.Persistence.Repositories
             => await _context.Veiculos.Include(v => v.Cliente).FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
         public async Task<Veiculo?> GetByPlacaAsync(string placa, CancellationToken cancellationToken = default)
-            => await _context.Veiculos.AsNoTracking().Include(v => v.Cliente).FirstOrDefaultAsync(v => v.Placa == placa.ToUpperInvariant(), cancellationToken);
+        {
+            var placaNormalizada = Placa.Criar(placa).Valor;
+            return await _context.Veiculos.AsNoTracking().Include(v => v.Cliente).FirstOrDefaultAsync(v => v.Placa == placaNormalizada, cancellationToken);
+        }
 
         public async Task<IEnumerable<Veiculo>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Veiculos.AsNoTracking().Include(v => v.Cliente).ToListAsync(cancellationToken);

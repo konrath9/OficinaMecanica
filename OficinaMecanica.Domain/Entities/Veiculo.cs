@@ -1,5 +1,5 @@
 using OficinaMecanica.Domain.Common;
-using OficinaMecanica.Domain.Common;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Domain.Entities
 {
@@ -22,9 +22,6 @@ namespace OficinaMecanica.Domain.Entities
         public Veiculo(string placa, string marca, string modelo, int ano, Guid clienteId)
             : base()
         {
-            if (string.IsNullOrWhiteSpace(placa))
-                throw new ArgumentException("Placa e obrigatoria.", nameof(placa));
-
             if (string.IsNullOrWhiteSpace(marca))
                 throw new ArgumentException("Marca e obrigatoria.", nameof(marca));
 
@@ -37,7 +34,10 @@ namespace OficinaMecanica.Domain.Entities
             if (clienteId == Guid.Empty)
                 throw new ArgumentException("Cliente e obrigatorio.", nameof(clienteId));
 
-            Placa = placa.ToUpperInvariant();
+            // Valida formato da placa via Value Object — lança ArgumentException se inválido
+            var placaValidada = ValueObjects.Placa.Criar(placa);
+
+            Placa = placaValidada.Valor;
             Marca = marca;
             Modelo = modelo;
             Ano = ano;

@@ -3,6 +3,7 @@ using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.Clientes;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Application.UseCases.Clientes
 {
@@ -41,15 +42,21 @@ namespace OficinaMecanica.Application.UseCases.Clientes
             return MapToResponse(criado);
         }
 
-        internal static ClienteResponse MapToResponse(Cliente c) => new()
+        internal static ClienteResponse MapToResponse(Cliente c)
         {
-            Id = c.Id,
-            Nome = c.Nome,
-            Documento = c.Documento,
-            Email = c.Email,
-            Telefone = c.Telefone,
-            CriadoEm = c.CreatedAt,
-            AtualizadoEm = c.UpdatedAt
-        };
+            var doc = Documento.Criar(c.Documento);
+            return new ClienteResponse
+            {
+                Id = c.Id,
+                Nome = c.Nome,
+                Documento = c.Documento,
+                DocumentoFormatado = doc.Formatado,
+                TipoDocumento = doc.Tipo.ToString(),
+                Email = c.Email,
+                Telefone = c.Telefone,
+                CriadoEm = c.CreatedAt,
+                AtualizadoEm = c.UpdatedAt
+            };
+        }
     }
 }

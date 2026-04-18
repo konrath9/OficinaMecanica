@@ -3,6 +3,7 @@ using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.Veiculos;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Application.UseCases.Veiculos
 {
@@ -50,17 +51,23 @@ namespace OficinaMecanica.Application.UseCases.Veiculos
             return MapToResponse(criado, null);
         }
 
-        internal static VeiculoResponse MapToResponse(Veiculo v, string? nomeCliente) => new()
+        internal static VeiculoResponse MapToResponse(Veiculo v, string? nomeCliente)
         {
-            Id = v.Id,
-            Placa = v.Placa,
-            Marca = v.Marca,
-            Modelo = v.Modelo,
-            Ano = v.Ano,
-            ClienteId = v.ClienteId,
-            NomeCliente = nomeCliente ?? v.Cliente?.Nome,
-            CriadoEm = v.CreatedAt,
-            AtualizadoEm = v.UpdatedAt
-        };
+            var placa = Placa.Criar(v.Placa);
+            return new VeiculoResponse
+            {
+                Id = v.Id,
+                Placa = v.Placa,
+                PlacaFormatada = placa.Formatada,
+                FormatoPlaca = placa.Formato.ToString(),
+                Marca = v.Marca,
+                Modelo = v.Modelo,
+                Ano = v.Ano,
+                ClienteId = v.ClienteId,
+                NomeCliente = nomeCliente ?? v.Cliente?.Nome,
+                CriadoEm = v.CreatedAt,
+                AtualizadoEm = v.UpdatedAt
+            };
+        }
     }
 }

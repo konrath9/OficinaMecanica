@@ -1,4 +1,5 @@
 using OficinaMecanica.Domain.Common;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Domain.Entities
 {
@@ -8,7 +9,7 @@ namespace OficinaMecanica.Domain.Entities
     public class Cliente : Entity
     {
         public string Nome { get; private set; }
-        public string Documento { get; private set; } // CPF ou CNPJ
+        public string Documento { get; private set; } // CPF ou CNPJ (somente dígitos, normalizado)
         public string? Email { get; private set; }
         public string? Telefone { get; private set; }
 
@@ -20,11 +21,11 @@ namespace OficinaMecanica.Domain.Entities
             if (string.IsNullOrWhiteSpace(nome))
                 throw new ArgumentException("Nome do cliente e obrigatorio.", nameof(nome));
 
-            if (string.IsNullOrWhiteSpace(documento))
-                throw new ArgumentException("Documento (CPF/CNPJ) e obrigatorio.", nameof(documento));
+            // Valida CPF/CNPJ via Value Object — lança ArgumentException se inválido
+            var documentoValidado = ValueObjects.Documento.Criar(documento);
 
             Nome = nome;
-            Documento = documento;
+            Documento = documentoValidado.Valor;
             Email = email;
             Telefone = telefone;
         }

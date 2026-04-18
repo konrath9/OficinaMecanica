@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Infrastructure.Persistence.Repositories
 {
@@ -17,7 +18,10 @@ namespace OficinaMecanica.Infrastructure.Persistence.Repositories
             => await _context.Clientes.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         public async Task<Cliente?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken = default)
-            => await _context.Clientes.AsNoTracking().FirstOrDefaultAsync(c => c.Documento == documento, cancellationToken);
+        {
+            var documentoNormalizado = Documento.Criar(documento).Valor;
+            return await _context.Clientes.AsNoTracking().FirstOrDefaultAsync(c => c.Documento == documentoNormalizado, cancellationToken);
+        }
 
         public async Task<IEnumerable<Cliente>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Clientes.AsNoTracking().ToListAsync(cancellationToken);

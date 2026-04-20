@@ -21,6 +21,27 @@ services:
     networks:
       - oficina_network
 
+  api:
+    build:
+      context: .
+      dockerfile: OficinaMecanica.API/Dockerfile
+    container_name: oficina_mecanica_api
+    restart: always
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=oficina_mecanica;Username=postgres;Password=postgres"
+      Jwt__SecretKey: "OficinaMecanica@SecretKey#2024!MustBe32CharsMin"
+      Jwt__Issuer: "OficinaMecanicaAPI"
+      Jwt__Audience: "OficinaMecanicaClients"
+      Jwt__ExpiracaoHoras: "24"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - oficina_network
+
   # Opcional: PgAdmin para gerenciar o banco visualmente
   pgadmin:
     image: dpage/pgadmin4:latest

@@ -15,6 +15,7 @@ namespace OficinaMecanica.Infrastructure.Persistence
         public DbSet<Veiculo> Veiculos => Set<Veiculo>();
         public DbSet<Servico> Servicos => Set<Servico>();
         public DbSet<Peca> Pecas => Set<Peca>();
+        public DbSet<Usuario> Usuarios => Set<Usuario>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.Veiculos;
@@ -5,6 +6,7 @@ using OficinaMecanica.Application.UseCases.Veiculos;
 
 namespace OficinaMecanica.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/veiculos")]
     public class VeiculosController : ControllerBase

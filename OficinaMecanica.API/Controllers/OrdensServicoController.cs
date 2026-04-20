@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.WorkOrders;
@@ -5,6 +6,7 @@ using OficinaMecanica.Application.UseCases.WorkOrders;
 
 namespace OficinaMecanica.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/ordens-servico")]
     public class OrdensServicoController : ControllerBase

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.Pecas;
@@ -5,6 +6,7 @@ using OficinaMecanica.Application.UseCases.Pecas;
 
 namespace OficinaMecanica.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/pecas")]
     public class PecasController : ControllerBase

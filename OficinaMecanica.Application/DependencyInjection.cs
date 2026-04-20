@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using OficinaMecanica.Application.UseCases.Autenticacao;
 using OficinaMecanica.Application.UseCases.Clientes;
 using OficinaMecanica.Application.UseCases.Pecas;
 using OficinaMecanica.Application.UseCases.Servicos;
@@ -11,6 +12,10 @@ namespace OficinaMecanica.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
+            // Autenticação
+            services.AddScoped<LoginUseCase>();
+            services.AddScoped<RegistrarUsuarioUseCase>();
+
             // Ordens de Serviço
             services.AddScoped<CriarOrdemServicoUseCase>();
             services.AddScoped<ObterOrdemServicoUseCase>();

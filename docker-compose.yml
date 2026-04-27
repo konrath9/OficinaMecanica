@@ -42,28 +42,8 @@ services:
     networks:
       - oficina_network
 
-  # Opcional: PgAdmin para gerenciar o banco visualmente
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: oficina_mecanica_pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@oficina.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_LISTEN_PORT: 80
-    ports:
-      - "8080:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    networks:
-      - oficina_network
-
-volumes:
+  volumes:
   postgres_data:
-    driver: local
-  pgadmin_data:
     driver: local
 
 networks:

@@ -64,7 +64,6 @@ docker-compose up -d --build
 Isso irá iniciar:
 - **API** em `http://localhost:5000` (Swagger em `http://localhost:5000/swagger`)
 - **PostgreSQL** na porta `5433`
-- **PgAdmin** em `http://localhost:8080` (login: `admin@oficina.com` / `admin`)
 
 ### Executar localmente (sem Docker para a API)
 

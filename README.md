@@ -87,6 +87,40 @@ Isso irá iniciar:
 dotnet test OficinaMecanica.Tests/OficinaMecanica.Tests.csproj --verbosity normal
 ```
 
+## Testes e Cobertura de Código
+
+O projeto possui testes automatizados (unitários e de integração), todos passando, organizados em:
+
+| Tipo | Descrição |
+|---|---|
+| **Unitários — Domínio** | Entidades, Value Objects (CPF/CNPJ, Placa, ItemServico, ItemPeca) |
+| **Unitários — Use Cases** | Todos os fluxos de negócio com mocks via Moq |
+| **Integração** | Endpoints via `WebApplicationFactory` + banco InMemory |
+
+A cobertura mínima exigida pelo desafio é de **80% nos domínios críticos**, requisito atendido pelo projeto. As Migrations geradas automaticamente pelo EF Core são excluídas da medição via `coverlet.runsettings`.
+
+### Gerar relatório HTML de cobertura
+
+```bash
+# 1. Executar testes coletando cobertura
+dotnet test OficinaMecanica.Tests/OficinaMecanica.Tests.csproj \
+  --settings OficinaMecanica.Tests/coverlet.runsettings \
+  --collect:"XPlat Code Coverage" \
+  --results-directory ./TestResults/coverage
+
+# 2. Gerar relatório HTML (requer reportgenerator instalado)
+dotnet tool install --global dotnet-reportgenerator-globaltool   # apenas na primeira vez
+
+reportgenerator \
+  -reports:"TestResults/coverage/**/coverage.cobertura.xml" \
+  -targetdir:"TestResults/Report" \
+  -reporttypes:"Html"
+
+# 3. Abrir o relatório
+start TestResults/Report/index.html   # Windows
+open TestResults/Report/index.html    # macOS/Linux
+```
+
 ## Estrutura do Repositório
 
 ```

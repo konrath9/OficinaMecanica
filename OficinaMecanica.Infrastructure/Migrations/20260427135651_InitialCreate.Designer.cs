@@ -12,8 +12,8 @@ using OficinaMecanica.Infrastructure.Persistence;
 namespace OficinaMecanica.Infrastructure.Migrations
 {
     [DbContext(typeof(OficinaMecanicaDbContext))]
-    [Migration("20260420001833_AddUsuarios")]
-    partial class AddUsuarios
+    [Migration("20260427135651_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

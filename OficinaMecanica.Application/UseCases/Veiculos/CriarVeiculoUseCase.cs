@@ -29,7 +29,7 @@ namespace OficinaMecanica.Application.UseCases.Veiculos
 
             var clienteExiste = await _clienteRepository.ExistsAsync(request.ClienteId, cancellationToken);
             if (!clienteExiste)
-                throw new NotFoundException("Cliente", request.ClienteId);
+                throw new NotFoundException($"Cliente com Id {request.ClienteId} não encontrado.");
 
             var existente = await _veiculoRepository.GetByPlacaAsync(request.Placa, cancellationToken);
             if (existente is not null)
@@ -39,6 +39,10 @@ namespace OficinaMecanica.Application.UseCases.Veiculos
             try
             {
                 veiculo = new Veiculo(request.Placa, request.Marca, request.Modelo, request.Ano, request.ClienteId);
+            }
+            catch (ArgumentException ex) when (ex.ParamName is "placa" or "valor")
+            {
+                throw new ValidationException("Placa", ex.Message);
             }
             catch (ArgumentException ex)
             {

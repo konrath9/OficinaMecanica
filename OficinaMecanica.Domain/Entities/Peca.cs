@@ -49,6 +49,15 @@ namespace OficinaMecanica.Domain.Entities
             UpdateModificationDate();
         }
 
+        public void AtualizarCodigo(string codigo)
+        {
+            if (string.IsNullOrWhiteSpace(codigo))
+                throw new ArgumentException("Codigo da peca e obrigatorio.", nameof(codigo));
+
+            Codigo = codigo.ToUpperInvariant();
+            UpdateModificationDate();
+        }
+
         public void EntradaEstoque(int quantidade)
         {
             if (quantidade <= 0)

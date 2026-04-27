@@ -21,6 +21,10 @@ namespace OficinaMecanica.Application.UseCases.Servicos
         {
             _logger.LogInformation("Criando servico: {Nome}", request.Nome);
 
+            var existente = await _servicoRepository.GetByNomeAsync(request.Nome, cancellationToken);
+            if (existente is not null)
+                throw new ValidationException("Nome", $"Já existe um serviço com o nome '{request.Nome}'.");
+
             Servico servico;
             try
             {

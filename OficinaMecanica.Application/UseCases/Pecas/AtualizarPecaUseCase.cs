@@ -25,6 +25,23 @@ namespace OficinaMecanica.Application.UseCases.Pecas
                 throw new NotFoundException("Peca", request.Id);
             }
 
+            // Atualiza código se informado
+            if (!string.IsNullOrWhiteSpace(request.Codigo))
+            {
+                var comMesmoCodigo = await _pecaRepository.GetByCodigoAsync(request.Codigo, cancellationToken);
+                if (comMesmoCodigo is not null && comMesmoCodigo.Id != request.Id)
+                    throw new ValidationException("Codigo", $"Já existe outra peça com o código '{request.Codigo.ToUpperInvariant()}'.");
+
+                try
+                {
+                    peca.AtualizarCodigo(request.Codigo);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new ValidationException("Codigo", ex.Message);
+                }
+            }
+
             try
             {
                 peca.Atualizar(request.Nome, request.PrecoUnitario);

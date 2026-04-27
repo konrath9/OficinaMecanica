@@ -22,12 +22,37 @@ namespace OficinaMecanica.Application.UseCases.Clientes
             if (cliente is null)
             {
                 _logger.LogWarning("Cliente nao encontrado para atualizacao: {Id}", request.Id);
-                throw new NotFoundException("Cliente", request.Id);
+                throw new NotFoundException($"Cliente com Id {request.Id} não encontrado.");
+            }
+
+            // Atualiza documento se informado
+            if (!string.IsNullOrWhiteSpace(request.Documento))
+            {
+                var comMesmoDoc = await _clienteRepository.GetByDocumentoAsync(request.Documento, cancellationToken);
+                if (comMesmoDoc is not null && comMesmoDoc.Id != request.Id)
+                    throw new ValidationException("Documento", "Já existe outro cliente com este documento.");
+
+                try
+                {
+                    cliente.AtualizarDocumento(request.Documento);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new ValidationException("Documento", ex.Message);
+                }
             }
 
             try
             {
                 cliente.Atualizar(request.Nome, request.Email, request.Telefone);
+            }
+            catch (ArgumentException ex) when (ex.ParamName == "email")
+            {
+                throw new ValidationException("Email", ex.Message);
+            }
+            catch (ArgumentException ex) when (ex.ParamName == "telefone")
+            {
+                throw new ValidationException("Telefone", ex.Message);
             }
             catch (ArgumentException ex)
             {

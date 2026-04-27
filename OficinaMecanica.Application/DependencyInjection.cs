@@ -48,6 +48,7 @@ namespace OficinaMecanica.Application
             services.AddScoped<ObterPecaUseCase>();
             services.AddScoped<AtualizarPecaUseCase>();
             services.AddScoped<ExcluirPecaUseCase>();
+            services.AddScoped<MovimentarEstoqueUseCase>();
 
             return services;
         }

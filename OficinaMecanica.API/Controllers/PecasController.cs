@@ -15,6 +15,7 @@ namespace OficinaMecanica.API.Controllers
         private readonly ObterPecaUseCase _obterPecaUseCase;
         private readonly AtualizarPecaUseCase _atualizarPecaUseCase;
         private readonly ExcluirPecaUseCase _excluirPecaUseCase;
+        private readonly MovimentarEstoqueUseCase _movimentarEstoqueUseCase;
         private readonly ILogger<PecasController> _logger;
 
         public PecasController(
@@ -22,12 +23,14 @@ namespace OficinaMecanica.API.Controllers
             ObterPecaUseCase obterPecaUseCase,
             AtualizarPecaUseCase atualizarPecaUseCase,
             ExcluirPecaUseCase excluirPecaUseCase,
+            MovimentarEstoqueUseCase movimentarEstoqueUseCase,
             ILogger<PecasController> logger)
         {
             _criarPecaUseCase = criarPecaUseCase;
             _obterPecaUseCase = obterPecaUseCase;
             _atualizarPecaUseCase = atualizarPecaUseCase;
             _excluirPecaUseCase = excluirPecaUseCase;
+            _movimentarEstoqueUseCase = movimentarEstoqueUseCase;
             _logger = logger;
         }
 
@@ -135,6 +138,31 @@ namespace OficinaMecanica.API.Controllers
             {
                 _logger.LogError(ex, "Erro ao excluir peca {Id}", id);
                 return StatusCode(500, new { message = "Erro ao excluir peça" });
+            }
+        }
+
+        /// <summary>
+        /// Movimenta o estoque de uma peça.
+        /// Informe <c>tipo</c> como <b>"entrada"</b> (incrementa) ou <b>"saida"</b> (decrementa) e a <c>quantidade</c>.
+        /// </summary>
+        [HttpPatch("{id}/estoque")]
+        public async Task<IActionResult> MovimentarEstoque(
+            Guid id,
+            [FromBody] MovimentarEstoqueRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                request.Id = id;
+                var response = await _movimentarEstoqueUseCase.HandleAsync(request, cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao movimentar estoque da peca {Id}", id);
+                return StatusCode(500, new { message = "Erro ao movimentar estoque" });
             }
         }
     }

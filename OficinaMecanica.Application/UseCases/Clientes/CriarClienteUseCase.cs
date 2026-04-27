@@ -31,9 +31,18 @@ namespace OficinaMecanica.Application.UseCases.Clientes
             {
                 cliente = new Cliente(request.Nome, request.Documento, request.Email, request.Telefone);
             }
+            catch (ArgumentException ex) when (ex.ParamName == "email")
+            {
+                throw new ValidationException("Email", ex.Message);
+            }
+            catch (ArgumentException ex) when (ex.ParamName == "telefone")
+            {
+                throw new ValidationException("Telefone", ex.Message);
+            }
             catch (ArgumentException ex)
             {
-                throw new ValidationException("Cliente", ex.Message);
+                // cobre nome vazio e erros de CPF/CNPJ vindos de Documento.Criar()
+                throw new ValidationException("Documento", ex.Message);
             }
 
             var criado = await _clienteRepository.AddAsync(cliente, cancellationToken);

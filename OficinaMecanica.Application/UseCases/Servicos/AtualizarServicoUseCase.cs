@@ -25,6 +25,10 @@ namespace OficinaMecanica.Application.UseCases.Servicos
                 throw new NotFoundException("Servico", request.Id);
             }
 
+            var comMesmoNome = await _servicoRepository.GetByNomeAsync(request.Nome, cancellationToken);
+            if (comMesmoNome is not null && comMesmoNome.Id != request.Id)
+                throw new ValidationException("Nome", $"Já existe outro serviço com o nome '{request.Nome}'.");
+
             try
             {
                 servico.Atualizar(request.Nome, request.Descricao, request.Preco);

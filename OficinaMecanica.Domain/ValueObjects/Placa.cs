@@ -11,11 +11,11 @@ namespace OficinaMecanica.Domain.ValueObjects
     {
         // Formato antigo: 3 letras + 4 dígitos  (ex: ABC1234)
         private static readonly Regex RegexFormatoAntigo =
-            new(@"^[A-Z]{3}\d{4}$", RegexOptions.Compiled);
+            new(@"^[A-Z]{3}\d{4}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(500));
 
         // Formato Mercosul: 3 letras + 1 dígito + 1 letra + 2 dígitos  (ex: ABC1D23)
         private static readonly Regex RegexMercosul =
-            new(@"^[A-Z]{3}\d[A-Z]\d{2}$", RegexOptions.Compiled);
+            new(@"^[A-Z]{3}\d[A-Z]\d{2}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(500));
 
         public string Valor { get; }
         public FormatoPlaca Formato { get; }

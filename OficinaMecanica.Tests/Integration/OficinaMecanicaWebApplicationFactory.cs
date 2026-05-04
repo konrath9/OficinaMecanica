@@ -12,6 +12,8 @@ namespace OficinaMecanica.Tests.Integration
 {
     public class OficinaMecanicaWebApplicationFactory : WebApplicationFactory<Program>
     {
+        private readonly string _dbName = $"OficinaMecanica_Testes_{Guid.NewGuid()}";
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureServices(services =>
@@ -22,9 +24,9 @@ namespace OficinaMecanica.Tests.Integration
                 if (descriptor != null)
                     services.Remove(descriptor);
 
-                // Adiciona InMemory para os testes
+                // Adiciona InMemory com nome unico por instancia de factory
                 services.AddDbContext<OficinaMecanicaDbContext>(options =>
-                    options.UseInMemoryDatabase("OficinaMecanica_Testes"));
+                    options.UseInMemoryDatabase(_dbName));
             });
 
             builder.UseEnvironment("Testing");

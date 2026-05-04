@@ -6,7 +6,7 @@
         <Configuration>
           <!-- Exclui migrations geradas automaticamente pelo EF Core -->
           <ExcludeByFile>**/Migrations/*.cs</ExcludeByFile>
-          <!-- Exclui código gerado pelo compilador -->
+          <!-- Exclui cï¿½digo gerado pelo compilador -->
           <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
         </Configuration>
       </DataCollector>

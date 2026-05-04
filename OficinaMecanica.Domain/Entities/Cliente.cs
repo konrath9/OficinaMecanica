@@ -11,7 +11,7 @@ namespace OficinaMecanica.Domain.Entities
     public class Cliente : Entity
     {
         private static readonly Regex RegexEmail =
-            new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
 
         public string Nome { get; private set; }
         public string Documento { get; private set; } // CPF ou CNPJ (somente dígitos, normalizado)
@@ -69,7 +69,7 @@ namespace OficinaMecanica.Domain.Entities
         private static void ValidarTelefone(string? telefone)
         {
             if (telefone is null) return;
-            var digitos = Regex.Replace(telefone, @"\D", "");
+            var digitos = Regex.Replace(telefone, @"\D", "", RegexOptions.None, TimeSpan.FromMilliseconds(500));
             if (digitos.Length < 10 || digitos.Length > 11)
                 throw new ArgumentException(
                     $"Telefone inválido: '{telefone}'. Informe DDD + número (10 ou 11 dígitos).", nameof(telefone));
@@ -78,7 +78,7 @@ namespace OficinaMecanica.Domain.Entities
         private static string? NormalizarTelefone(string? telefone)
         {
             if (telefone is null) return null;
-            return Regex.Replace(telefone, @"\D", "");
+            return Regex.Replace(telefone, @"\D", "", RegexOptions.None, TimeSpan.FromMilliseconds(500));
         }
     }
 }

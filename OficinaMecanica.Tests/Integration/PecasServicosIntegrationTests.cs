@@ -166,7 +166,6 @@ namespace OficinaMecanica.Tests.Integration
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
-        private sealed record IdResponse(Guid Id);
         private sealed record PecaResponse(Guid Id, string Codigo, string Nome, decimal PrecoUnitario, int QuantidadeEstoque);
     }
 

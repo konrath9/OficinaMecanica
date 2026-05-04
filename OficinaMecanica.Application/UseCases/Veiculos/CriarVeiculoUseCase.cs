@@ -31,10 +31,7 @@ namespace OficinaMecanica.Application.UseCases.Veiculos
             if (!clienteExiste)
                 throw new NotFoundException($"Cliente com Id {request.ClienteId} não encontrado.");
 
-            var existente = await _veiculoRepository.GetByPlacaAsync(request.Placa, cancellationToken);
-            if (existente is not null)
-                throw new ValidationException("Placa", "Já existe um veículo com esta placa.");
-
+            // Valida e constrói o veículo antes de consultar por placa no repositório
             Veiculo veiculo;
             try
             {
@@ -48,6 +45,10 @@ namespace OficinaMecanica.Application.UseCases.Veiculos
             {
                 throw new ValidationException("Veiculo", ex.Message);
             }
+
+            var existente = await _veiculoRepository.GetByPlacaAsync(request.Placa, cancellationToken);
+            if (existente is not null)
+                throw new ValidationException("Placa", "Já existe um veículo com esta placa.");
 
             var criado = await _veiculoRepository.AddAsync(veiculo, cancellationToken);
             _logger.LogInformation("Veiculo criado com Id: {Id}", criado.Id);

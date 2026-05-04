@@ -2,6 +2,8 @@ using Microsoft.OpenApi.Models;
 using OficinaMecanica.Application;
 using System.Text.Json.Serialization;
 using OficinaMecanica.Infrastructure;
+using OficinaMecanica.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,11 +56,17 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Aplica migrations automaticamente ao iniciar (ignorado em testes com InMemory)
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<OficinaMecanicaDbContext>();
+    if (db.Database.IsRelational())
+        db.Database.Migrate();
 }
+
+// Swagger habilitado em todos os ambientes
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

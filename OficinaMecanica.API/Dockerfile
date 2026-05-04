@@ -2,7 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia os .csproj e restaura dependências
+# Copia nuget.config para evitar referencias a pastas locais do Windows
+COPY nuget.config .
+
+# Copia os .csproj e restaura dependencias
 COPY OficinaMecanica.Domain/OficinaMecanica.Domain.csproj OficinaMecanica.Domain/
 COPY OficinaMecanica.Application/OficinaMecanica.Application.csproj OficinaMecanica.Application/
 COPY OficinaMecanica.Infrastructure/OficinaMecanica.Infrastructure.csproj OficinaMecanica.Infrastructure/

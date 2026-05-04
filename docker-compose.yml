@@ -42,7 +42,7 @@ services:
     networks:
       - oficina_network
 
-  volumes:
+volumes:
   postgres_data:
     driver: local
 

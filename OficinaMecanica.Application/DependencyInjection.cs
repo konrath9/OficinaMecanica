@@ -1,4 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using OficinaMecanica.Application.UseCases.Autenticacao;
+using OficinaMecanica.Application.UseCases.Clientes;
+using OficinaMecanica.Application.UseCases.Pecas;
+using OficinaMecanica.Application.UseCases.Servicos;
+using OficinaMecanica.Application.UseCases.Veiculos;
 using OficinaMecanica.Application.UseCases.WorkOrders;
 
 namespace OficinaMecanica.Application
@@ -7,10 +12,43 @@ namespace OficinaMecanica.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<CreateWorkOrderUseCase>();
-            services.AddScoped<AddServiceToWorkOrderUseCase>();
-            services.AddScoped<AddPartToWorkOrderUseCase>();
-            services.AddScoped<ChangeWorkOrderStatusUseCase>();
+            // Autenticação
+            services.AddScoped<LoginUseCase>();
+            services.AddScoped<RegistrarUsuarioUseCase>();
+
+            // Ordens de Serviço
+            services.AddScoped<CriarOrdemServicoUseCase>();
+            services.AddScoped<ObterOrdemServicoUseCase>();
+            services.AddScoped<AdicionarServicoOrdemServicoUseCase>();
+            services.AddScoped<AdicionarPecaOrdemServicoUseCase>();
+            services.AddScoped<AlterarStatusOrdemServicoUseCase>();
+            services.AddScoped<AcompanharOrdemServicoUseCase>();
+            services.AddScoped<TempoMedioExecucaoUseCase>();
+
+            // Clientes
+            services.AddScoped<CriarClienteUseCase>();
+            services.AddScoped<ObterClienteUseCase>();
+            services.AddScoped<AtualizarClienteUseCase>();
+            services.AddScoped<ExcluirClienteUseCase>();
+
+            // Veículos
+            services.AddScoped<CriarVeiculoUseCase>();
+            services.AddScoped<ObterVeiculoUseCase>();
+            services.AddScoped<AtualizarVeiculoUseCase>();
+            services.AddScoped<ExcluirVeiculoUseCase>();
+
+            // Serviços
+            services.AddScoped<CriarServicoUseCase>();
+            services.AddScoped<ObterServicoUseCase>();
+            services.AddScoped<AtualizarServicoUseCase>();
+            services.AddScoped<ExcluirServicoUseCase>();
+
+            // Peças
+            services.AddScoped<CriarPecaUseCase>();
+            services.AddScoped<ObterPecaUseCase>();
+            services.AddScoped<AtualizarPecaUseCase>();
+            services.AddScoped<ExcluirPecaUseCase>();
+            services.AddScoped<MovimentarEstoqueUseCase>();
 
             return services;
         }

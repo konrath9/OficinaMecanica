@@ -22,7 +22,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("OficinaMecanica.Domain.Entities.WorkOrder", b =>
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Cliente", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -32,32 +32,78 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<Guid>("CustomerId")
+                    b.Property<string>("Documento")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("documento");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome");
+
+                    b.Property<string>("Telefone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("telefone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clientes");
+
+                    b.HasIndex("Documento")
+                        .IsUnique()
+                        .HasDatabaseName("ix_clientes_documento");
+
+                    b.ToTable("clientes", (string)null);
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.OrdemServico", b =>
+                {
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("customer_id");
+                        .HasColumnName("id");
 
-                    b.Property<DateTime?>("DeliveredAt")
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cliente_id");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("delivered_at");
+                        .HasColumnName("created_at");
 
-                    b.Property<DateTime?>("FinishedAt")
+                    b.Property<DateTime?>("EntregueEm")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("finished_at");
+                        .HasColumnName("entregue_em");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("notes");
+                    b.Property<DateTime?>("FinalizadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finalizada_em");
 
-                    b.Property<string>("Number")
+                    b.Property<DateTime?>("IniciadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("iniciada_em");
+
+                    b.Property<string>("Numero")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasColumnName("number");
+                        .HasColumnName("numero");
 
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("started_at");
+                    b.Property<string>("Observacoes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("observacoes");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -69,35 +115,225 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<Guid>("VehicleId")
+                    b.Property<Guid>("VeiculoId")
                         .HasColumnType("uuid")
-                        .HasColumnName("vehicle_id");
+                        .HasColumnName("veiculo_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_work_orders");
+                        .HasName("pk_ordens_servico");
+
+                    b.HasIndex("ClienteId")
+                        .HasDatabaseName("ix_ordens_servico_cliente_id");
 
                     b.HasIndex("CreatedAt")
-                        .HasDatabaseName("ix_work_orders_created_at");
+                        .HasDatabaseName("ix_ordens_servico_criada_em");
 
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_work_orders_customer_id");
-
-                    b.HasIndex("Number")
+                    b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("ix_work_orders_number");
+                        .HasDatabaseName("ix_ordens_servico_numero");
 
                     b.HasIndex("Status")
-                        .HasDatabaseName("ix_work_orders_status");
+                        .HasDatabaseName("ix_ordens_servico_status");
 
-                    b.HasIndex("VehicleId")
-                        .HasDatabaseName("ix_work_orders_vehicle_id");
+                    b.HasIndex("VeiculoId")
+                        .HasDatabaseName("ix_ordens_servico_veiculo_id");
 
-                    b.ToTable("work_orders", (string)null);
+                    b.ToTable("ordens_servico", (string)null);
                 });
 
-            modelBuilder.Entity("OficinaMecanica.Domain.Entities.WorkOrder", b =>
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Peca", b =>
                 {
-                    b.OwnsMany("OficinaMecanica.Domain.ValueObjects.PartItem", "Parts", b1 =>
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("codigo");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome");
+
+                    b.Property<decimal>("PrecoUnitario")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("preco_unitario");
+
+                    b.Property<int>("QuantidadeEstoque")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade_estoque");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pecas");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pecas_codigo");
+
+                    b.ToTable("pecas", (string)null);
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Servico", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("descricao");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome");
+
+                    b.Property<decimal>("Preco")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("preco");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_servicos");
+
+                    b.HasIndex("Nome")
+                        .HasDatabaseName("ix_servicos_nome");
+
+                    b.ToTable("servicos", (string)null);
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Usuario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome");
+
+                    b.Property<string>("Perfil")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("perfil");
+
+                    b.Property<string>("SenhaHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("senha_hash");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_usuarios");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_usuarios_email");
+
+                    b.ToTable("usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Veiculo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Ano")
+                        .HasColumnType("integer")
+                        .HasColumnName("ano");
+
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cliente_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Marca")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("marca");
+
+                    b.Property<string>("Modelo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("modelo");
+
+                    b.Property<string>("Placa")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("placa");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_veiculos");
+
+                    b.HasIndex("ClienteId")
+                        .HasDatabaseName("ix_veiculos_cliente_id");
+
+                    b.HasIndex("Placa")
+                        .IsUnique()
+                        .HasDatabaseName("ix_veiculos_placa");
+
+                    b.ToTable("veiculos", (string)null);
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.OrdemServico", b =>
+                {
+                    b.OwnsMany("OficinaMecanica.Domain.ValueObjects.ItemPeca", "Pecas", b1 =>
                         {
                             b1.Property<int>("id")
                                 .ValueGeneratedOnAdd()
@@ -106,48 +342,52 @@ namespace OficinaMecanica.Infrastructure.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
 
-                            b1.Property<string>("Code")
+                            b1.Property<string>("Codigo")
                                 .IsRequired()
                                 .HasMaxLength(50)
                                 .HasColumnType("character varying(50)")
-                                .HasColumnName("code");
+                                .HasColumnName("codigo");
 
-                            b1.Property<string>("Description")
+                            b1.Property<string>("Descricao")
                                 .IsRequired()
                                 .HasMaxLength(500)
                                 .HasColumnType("character varying(500)")
-                                .HasColumnName("description");
+                                .HasColumnName("descricao");
 
-                            b1.Property<int>("Quantity")
-                                .HasColumnType("integer")
-                                .HasColumnName("quantity");
+                            b1.Property<Guid>("PecaId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("peca_id");
 
-                            b1.Property<decimal>("UnitPrice")
+                            b1.Property<decimal>("PrecoUnitario")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)")
-                                .HasColumnName("unit_price");
+                                .HasColumnName("preco_unitario");
 
-                            b1.Property<Guid>("work_order_id")
+                            b1.Property<int>("Quantidade")
+                                .HasColumnType("integer")
+                                .HasColumnName("quantidade");
+
+                            b1.Property<Guid>("ordem_servico_id")
                                 .HasColumnType("uuid")
-                                .HasColumnName("work_order_id");
+                                .HasColumnName("ordem_servico_id");
 
                             b1.HasKey("id")
-                                .HasName("pk_work_order_parts");
+                                .HasName("pk_ordem_servico_pecas");
 
-                            b1.HasIndex("Code")
-                                .HasDatabaseName("ix_work_order_parts_code");
+                            b1.HasIndex("Codigo")
+                                .HasDatabaseName("ix_ordem_servico_pecas_codigo");
 
-                            b1.HasIndex("work_order_id")
-                                .HasDatabaseName("ix_work_order_parts_work_order_id");
+                            b1.HasIndex("ordem_servico_id")
+                                .HasDatabaseName("ix_ordem_servico_pecas_ordem_servico_id");
 
-                            b1.ToTable("work_order_parts", (string)null);
+                            b1.ToTable("ordem_servico_pecas", (string)null);
 
                             b1.WithOwner()
-                                .HasForeignKey("work_order_id")
-                                .HasConstraintName("fk_work_order_parts_work_orders");
+                                .HasForeignKey("ordem_servico_id")
+                                .HasConstraintName("fk_ordem_servico_pecas_ordens_servico");
                         });
 
-                    b.OwnsMany("OficinaMecanica.Domain.ValueObjects.ServiceItem", "Services", b1 =>
+                    b.OwnsMany("OficinaMecanica.Domain.ValueObjects.ItemServico", "Servicos", b1 =>
                         {
                             b1.Property<int>("id")
                                 .ValueGeneratedOnAdd()
@@ -156,41 +396,57 @@ namespace OficinaMecanica.Infrastructure.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
 
-                            b1.Property<string>("Description")
+                            b1.Property<string>("Descricao")
                                 .IsRequired()
                                 .HasMaxLength(500)
                                 .HasColumnType("character varying(500)")
-                                .HasColumnName("description");
+                                .HasColumnName("descricao");
 
-                            b1.Property<int>("Quantity")
-                                .HasColumnType("integer")
-                                .HasColumnName("quantity");
-
-                            b1.Property<decimal>("UnitPrice")
+                            b1.Property<decimal>("PrecoUnitario")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)")
-                                .HasColumnName("unit_price");
+                                .HasColumnName("preco_unitario");
 
-                            b1.Property<Guid>("work_order_id")
+                            b1.Property<int>("Quantidade")
+                                .HasColumnType("integer")
+                                .HasColumnName("quantidade");
+
+                            b1.Property<Guid>("ServicoId")
                                 .HasColumnType("uuid")
-                                .HasColumnName("work_order_id");
+                                .HasColumnName("servico_id");
+
+                            b1.Property<Guid>("ordem_servico_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("ordem_servico_id");
 
                             b1.HasKey("id")
-                                .HasName("pk_work_order_services");
+                                .HasName("pk_ordem_servico_servicos");
 
-                            b1.HasIndex("work_order_id")
-                                .HasDatabaseName("ix_work_order_services_work_order_id");
+                            b1.HasIndex("ordem_servico_id")
+                                .HasDatabaseName("ix_ordem_servico_servicos_ordem_servico_id");
 
-                            b1.ToTable("work_order_services", (string)null);
+                            b1.ToTable("ordem_servico_servicos", (string)null);
 
                             b1.WithOwner()
-                                .HasForeignKey("work_order_id")
-                                .HasConstraintName("fk_work_order_services_work_orders");
+                                .HasForeignKey("ordem_servico_id")
+                                .HasConstraintName("fk_ordem_servico_servicos_ordens_servico");
                         });
 
-                    b.Navigation("Parts");
+                    b.Navigation("Pecas");
 
-                    b.Navigation("Services");
+                    b.Navigation("Servicos");
+                });
+
+            modelBuilder.Entity("OficinaMecanica.Domain.Entities.Veiculo", b =>
+                {
+                    b.HasOne("OficinaMecanica.Domain.Entities.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_veiculos_clientes");
+
+                    b.Navigation("Cliente");
                 });
 #pragma warning restore 612, 618
         }

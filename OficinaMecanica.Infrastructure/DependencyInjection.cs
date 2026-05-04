@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
 using OficinaMecanica.Infrastructure.Persistence;
 using OficinaMecanica.Infrastructure.Persistence.Repositories;
 using OficinaMecanica.Infrastructure.Services;
+using OficinaMecanica.Infrastructure.Settings;
+using System.Text;
 
 namespace OficinaMecanica.Infrastructure
 {
@@ -15,6 +19,7 @@ namespace OficinaMecanica.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
+            // ?? Banco de dados ??????????????????????????????
             services.AddDbContext<OficinaMecanicaDbContext>(options =>
                 options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
@@ -27,13 +32,45 @@ namespace OficinaMecanica.Infrastructure
                             errorCodesToAdd: null);
                     }));
 
-            services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
-            services.AddScoped<ICustomerRepository, CustomerRepository>();
-            services.AddScoped<IVehicleRepository, VehicleRepository>();
-            services.AddScoped<IServiceRepository, ServiceRepository>();
-            services.AddScoped<IPartRepository, PartRepository>();
+            // ?? Repositórios ????????????????????????????????
+            services.AddScoped<IOrdemServicoRepository, OrdemServicoRepository>();
+            services.AddScoped<IClienteRepository, ClienteRepository>();
+            services.AddScoped<IVeiculoRepository, VeiculoRepository>();
+            services.AddScoped<IServicoRepository, ServicoRepository>();
+            services.AddScoped<IPecaRepository, PecaRepository>();
+            services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
-            services.AddScoped<IWorkOrderNumberGenerator, WorkOrderNumberGenerator>();
+            // ?? Serviços de domínio ?????????????????????????
+            services.AddScoped<IGeradorNumeroOrdemServico, GeradorNumeroOrdemServico>();
+            services.AddScoped<ISenhaService, BcryptSenhaService>();
+            services.AddScoped<ITokenService, JwtTokenService>();
+
+            // ?? JWT ?????????????????????????????????????????
+            var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()
+                ?? throw new InvalidOperationException("Configuração JWT ausente no appsettings.");
+
+            services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
             return services;
         }

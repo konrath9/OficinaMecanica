@@ -82,5 +82,30 @@ namespace OficinaMecanica.Infrastructure.Persistence.Repositories
 
             return await query.ToListAsync(cancellationToken);
         }
+
+        public async Task<IEnumerable<OrdemServico>> GetComServicosFinalizadosNoPeriodoAsync(
+            DateTime? inicio,
+            DateTime? fim,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.OrdensServico
+                .AsNoTracking()
+                .Include(os => os.Servicos)
+                .Where(os => os.Servicos.Any(s => s.IniciadoEm.HasValue && s.FinalizadoEm.HasValue));
+
+            if (inicio.HasValue)
+            {
+                var inicioUtc = DateTime.SpecifyKind(inicio.Value, DateTimeKind.Utc);
+                query = query.Where(os => os.Servicos.Any(s => s.FinalizadoEm >= inicioUtc));
+            }
+
+            if (fim.HasValue)
+            {
+                var fimUtc = DateTime.SpecifyKind(fim.Value, DateTimeKind.Utc);
+                query = query.Where(os => os.Servicos.Any(s => s.FinalizadoEm <= fimUtc));
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
     }
 }

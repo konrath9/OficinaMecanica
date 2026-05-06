@@ -25,7 +25,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         {
             _logger.LogInformation("Calculando tempo medio de execucao por servico. Periodo: {Inicio} - {Fim}", periodoInicio, periodoFim);
 
-            var ordens = await _ordemServicoRepository.GetFinalizadasNoPeriodoAsync(periodoInicio, periodoFim, cancellationToken);
+            var ordens = await _ordemServicoRepository.GetComServicosFinalizadosNoPeriodoAsync(periodoInicio, periodoFim, cancellationToken);
 
             // Coleta todos os itens de servico com duracao registrada
             var itensFinalizados = ordens

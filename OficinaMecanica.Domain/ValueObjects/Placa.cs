@@ -28,7 +28,7 @@ namespace OficinaMecanica.Domain.ValueObjects
 
         /// <summary>
         /// Cria uma Placa validada.
-        /// Aceita com ou sem hífen (ABC-1234 ou ABC1234) em ambos os formatos.
+        /// Aceita com ou sem hífen ou espaço (ABC-1234, ABC 1234 ou ABC1234) em ambos os formatos.
         /// </summary>
         public static Placa Criar(string valor)
         {
@@ -49,6 +49,13 @@ namespace OficinaMecanica.Domain.ValueObjects
                 nameof(valor));
         }
 
+        /// <summary>Tenta criar uma Placa sem lançar excessão. Retorna false se inválida.</summary>
+        public static bool TryCreate(string valor, out Placa? placa)
+        {
+            try { placa = Criar(valor); return true; }
+            catch { placa = null; return false; }
+        }
+
         /// <summary>Retorna a placa formatada com hífen (ex: ABC-1234 ou ABC1D23).</summary>
         public string Formatada => Formato == FormatoPlaca.Antigo
             ? $"{Valor[..3]}-{Valor[3..]}"
@@ -59,7 +66,7 @@ namespace OficinaMecanica.Domain.ValueObjects
         // ??????????????????????????????????????????????
 
         private static string Normalizar(string valor) =>
-            valor.Replace("-", "").Trim().ToUpperInvariant();
+            valor.Replace("-", "").Replace(" ", "").Trim().ToUpperInvariant();
 
         // ??????????????????????????????????????????????
         // Igualdade (Value Object — comparação por valor)

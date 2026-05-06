@@ -1,31 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
-using OficinaMecanica.Application.DTOs.OrdemServico;
-using OficinaMecanica.Application.Enums;
 using OficinaMecanica.Application.UseCases.OrdemServico;
 
 namespace OficinaMecanica.API.Controllers
 {
     /// <summary>
-    /// Controller público — não requer autenticação.
-    /// Permite que o cliente final acompanhe o status da sua OS e aprove o orçamento.
+    /// Endpoints públicos — não requerem autenticação.
+    /// Permite que o cliente final acompanhe o status da OS e aprove o orçamento.
     /// </summary>
     [ApiController]
     [Route("api/publico/acompanhamento")]
     public class AcompanhamentoPublicoController : ControllerBase
     {
-        private readonly AcompanharOrdemServicoUseCase _acompanharOrdemServicoUseCase;
-        private readonly AlterarStatusOrdemServicoUseCase _alterarStatusUseCase;
+        private readonly AcompanharOrdemServicoUseCase _acompanharUseCase;
+        private readonly AprovarOrcamentoUseCase _aprovarOrcamentoUseCase;
         private readonly ILogger<AcompanhamentoPublicoController> _logger;
 
         public AcompanhamentoPublicoController(
-            AcompanharOrdemServicoUseCase acompanharOrdemServicoUseCase,
-            AlterarStatusOrdemServicoUseCase alterarStatusUseCase,
+            AcompanharOrdemServicoUseCase acompanharUseCase,
+            AprovarOrcamentoUseCase aprovarOrcamentoUseCase,
             ILogger<AcompanhamentoPublicoController> logger)
         {
-            _acompanharOrdemServicoUseCase = acompanharOrdemServicoUseCase;
-            _alterarStatusUseCase = alterarStatusUseCase;
+            _acompanharUseCase = acompanharUseCase;
+            _aprovarOrcamentoUseCase = aprovarOrcamentoUseCase;
             _logger = logger;
         }
 
@@ -36,7 +33,7 @@ namespace OficinaMecanica.API.Controllers
         {
             try
             {
-                var response = await _acompanharOrdemServicoUseCase.HandleAsync(numero, cancellationToken);
+                var response = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
                 return Ok(response);
             }
             catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
@@ -48,10 +45,10 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Aprovação do orçamento pelo cliente — não requer autenticação.</summary>
+        /// <summary>Cliente aprova o orçamento — OS vai automaticamente para Em Execução.</summary>
         /// <remarks>
-        /// A OS deve estar com status **AguardandoAprovacao** para que a aprovação seja aceita.
-        /// Após aprovação o status muda automaticamente para **EmExecucao**.
+        /// A OS deve estar com status <b>AguardandoAprovacao</b>.
+        /// Após a aprovação o status muda automaticamente para <b>EmExecucao</b>.
         /// </remarks>
         /// <param name="numero">Número da OS</param>
         [HttpPost("{numero}/aprovar")]
@@ -59,13 +56,8 @@ namespace OficinaMecanica.API.Controllers
         {
             try
             {
-                var os = await _acompanharOrdemServicoUseCase.HandleAsync(numero, cancellationToken);
-                var request = new AlterarStatusOrdemServicoRequest
-                {
-                    OrdemServicoId = os.OrdemServicoId,
-                    Acao = AcaoOrdemServico.Aprovar
-                };
-                var response = await _alterarStatusUseCase.HandleAsync(request, cancellationToken);
+                var os = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
+                var response = await _aprovarOrcamentoUseCase.HandleAsync(os.OrdemServicoId, cancellationToken);
                 return Ok(response);
             }
             catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }

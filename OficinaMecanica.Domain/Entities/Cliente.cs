@@ -15,6 +15,8 @@ namespace OficinaMecanica.Domain.Entities
 
         public string Nome { get; private set; }
         public string Documento { get; private set; } // CPF ou CNPJ (somente dígitos, normalizado)
+        public TipoDocumento TipoDocumento => Documento.Length == 11 ? TipoDocumento.Cpf : TipoDocumento.Cnpj;
+        public string DocumentoFormatado => ValueObjects.Documento.Criar(Documento).Formatado;
         public string? Email { get; private set; }
         public string? Telefone { get; private set; }
 

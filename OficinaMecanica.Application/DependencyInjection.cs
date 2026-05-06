@@ -21,12 +21,13 @@ namespace OficinaMecanica.Application
             services.AddScoped<ObterOrdemServicoUseCase>();
             services.AddScoped<AdicionarServicoOrdemServicoUseCase>();
             services.AddScoped<AdicionarPecaOrdemServicoUseCase>();
-            services.AddScoped<AlterarStatusOrdemServicoUseCase>();
             services.AddScoped<AcompanharOrdemServicoUseCase>();
             services.AddScoped<TempoMedioExecucaoUseCase>();
             services.AddScoped<RegistrarExecucaoServicoUseCase>();
             services.AddScoped<ConcluirDiagnosticoUseCase>();
+            services.AddScoped<AprovarOrcamentoUseCase>();
             services.AddScoped<RegistrarEntregaUseCase>();
+            services.AddScoped<CancelarOrdemServicoUseCase>();
 
             // Clientes
             services.AddScoped<CriarClienteUseCase>();

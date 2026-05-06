@@ -18,11 +18,17 @@ namespace OficinaMecanica.Domain.ValueObjects
         /// <summary>
         /// Cria um Documento validado a partir de uma string CPF ou CNPJ.
         /// Aceita formatos com ou sem máscara (000.000.000-00 ou 00000000000).
+        /// Rejeita qualquer entrada que contenha letras.
         /// </summary>
         public static Documento Criar(string valor)
         {
             if (string.IsNullOrWhiteSpace(valor))
                 throw new ArgumentException("CPF/CNPJ é obrigatório.", nameof(valor));
+
+            if (valor.Any(char.IsLetter))
+                throw new ArgumentException(
+                    $"CPF/CNPJ inválido: não pode conter letras. Valor recebido: '{valor}'.",
+                    nameof(valor));
 
             var digitos = ExtrairDigitos(valor);
 
@@ -31,9 +37,16 @@ namespace OficinaMecanica.Domain.ValueObjects
                 11 => ValidarCpf(digitos),
                 14 => ValidarCnpj(digitos),
                 _ => throw new ArgumentException(
-                    $"Documento inválido: deve ter 11 dígitos (CPF) ou 14 dígitos (CNPJ). Recebido: {valor}",
+                    $"Documento inválido: deve ter 11 dígitos (CPF) ou 14 dígitos (CNPJ). Recebido: '{valor}'.",
                     nameof(valor))
             };
+        }
+
+        /// <summary>Tenta criar um Documento sem lançar exceção. Retorna false se inválido.</summary>
+        public static bool TryCreate(string valor, out Documento? documento)
+        {
+            try { documento = Criar(valor); return true; }
+            catch { documento = null; return false; }
         }
 
         // ??????????????????????????????????????????????

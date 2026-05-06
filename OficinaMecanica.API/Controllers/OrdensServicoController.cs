@@ -1,4 +1,3 @@
-Ôªøusing Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
@@ -16,11 +15,11 @@ namespace OficinaMecanica.API.Controllers
         private readonly ObterOrdemServicoUseCase _obterOrdemServicoUseCase;
         private readonly AdicionarServicoOrdemServicoUseCase _adicionarServicoUseCase;
         private readonly AdicionarPecaOrdemServicoUseCase _adicionarPecaUseCase;
-        private readonly AlterarStatusOrdemServicoUseCase _alterarStatusUseCase;
-        private readonly TempoMedioExecucaoUseCase _tempoMedioExecucaoUseCase;
         private readonly RegistrarExecucaoServicoUseCase _registrarExecucaoServicoUseCase;
         private readonly ConcluirDiagnosticoUseCase _concluirDiagnosticoUseCase;
         private readonly RegistrarEntregaUseCase _registrarEntregaUseCase;
+        private readonly CancelarOrdemServicoUseCase _cancelarUseCase;
+        private readonly TempoMedioExecucaoUseCase _tempoMedioExecucaoUseCase;
         private readonly ILogger<OrdensServicoController> _logger;
 
         public OrdensServicoController(
@@ -28,26 +27,30 @@ namespace OficinaMecanica.API.Controllers
             ObterOrdemServicoUseCase obterOrdemServicoUseCase,
             AdicionarServicoOrdemServicoUseCase adicionarServicoUseCase,
             AdicionarPecaOrdemServicoUseCase adicionarPecaUseCase,
-            AlterarStatusOrdemServicoUseCase alterarStatusUseCase,
-            TempoMedioExecucaoUseCase tempoMedioExecucaoUseCase,
             RegistrarExecucaoServicoUseCase registrarExecucaoServicoUseCase,
             ConcluirDiagnosticoUseCase concluirDiagnosticoUseCase,
             RegistrarEntregaUseCase registrarEntregaUseCase,
+            CancelarOrdemServicoUseCase cancelarUseCase,
+            TempoMedioExecucaoUseCase tempoMedioExecucaoUseCase,
             ILogger<OrdensServicoController> logger)
         {
             _criarOrdemServicoUseCase = criarOrdemServicoUseCase;
             _obterOrdemServicoUseCase = obterOrdemServicoUseCase;
             _adicionarServicoUseCase = adicionarServicoUseCase;
             _adicionarPecaUseCase = adicionarPecaUseCase;
-            _alterarStatusUseCase = alterarStatusUseCase;
-            _tempoMedioExecucaoUseCase = tempoMedioExecucaoUseCase;
             _registrarExecucaoServicoUseCase = registrarExecucaoServicoUseCase;
             _concluirDiagnosticoUseCase = concluirDiagnosticoUseCase;
             _registrarEntregaUseCase = registrarEntregaUseCase;
+            _cancelarUseCase = cancelarUseCase;
+            _tempoMedioExecucaoUseCase = tempoMedioExecucaoUseCase;
             _logger = logger;
         }
 
-        /// <summary>Cria uma nova Ordem de Servi√ßo.</summary>
+        /// <summary>Cria uma nova Ordem de ServiÁo.</summary>
+        /// <remarks>
+        /// Ao criar, a OS recebe automaticamente o status <b>Recebida</b>.
+        /// O status avanÁa para <b>EmDiagnostico</b> assim que o primeiro serviÁo ou peÁa for adicionado.
+        /// </remarks>
         [HttpPost]
         public async Task<IActionResult> CriarOrdemServico(
             [FromBody] CriarOrdemServicoRequest request,
@@ -67,7 +70,7 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Lista todas as Ordens de Servi√ßo.</summary>
+        /// <summary>Lista todas as Ordens de ServiÁo.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -79,11 +82,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar OS");
-                return StatusCode(500, new { message = "Erro ao listar ordens de servi√ßo" });
+                return StatusCode(500, new { message = "Erro ao listar ordens de serviÁo" });
             }
         }
 
-        /// <summary>Obt√©m uma Ordem de Servi√ßo pelo Id.</summary>
+        /// <summary>ObtÈm uma Ordem de ServiÁo pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -100,7 +103,10 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Adiciona um servi√ßo a uma OS.</summary>
+        /// <summary>Adiciona um serviÁo ‡ OS.</summary>
+        /// <remarks>
+        /// Se a OS estiver em <b>Recebida</b>, o status avanÁa automaticamente para <b>EmDiagnostico</b>.
+        /// </remarks>
         [HttpPost("{id}/servicos")]
         public async Task<IActionResult> AdicionarServico(
             Guid id,
@@ -118,11 +124,15 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar servico na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar servi√ßo" });
+                return StatusCode(500, new { message = "Erro ao adicionar serviÁo" });
             }
         }
 
-        /// <summary>Adiciona uma pe√ßa a uma OS.</summary>
+        /// <summary>Adiciona uma peÁa ‡ OS.</summary>
+        /// <remarks>
+        /// Se a OS estiver em <b>Recebida</b>, o status avanÁa automaticamente para <b>EmDiagnostico</b>.
+        /// Desconta a quantidade do estoque da peÁa automaticamente.
+        /// </remarks>
         [HttpPost("{id}/pecas")]
         public async Task<IActionResult> AdicionarPeca(
             Guid id,
@@ -140,61 +150,40 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar peca na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar pe√ßa" });
+                return StatusCode(500, new { message = "Erro ao adicionar peÁa" });
             }
         }
 
-        /// <summary>Altera o status de uma OS.</summary>
+        /// <summary>TÈcnico conclui o diagnÛstico e envia o orÁamento para aprovaÁ„o do cliente.</summary>
         /// <remarks>
-        /// Envie o campo **acao** com um dos valores abaixo para avan√ßar o fluxo da OS:
-        ///
-        /// | Valor | A√ß√£o | Status resultante | Status requerido |
-        /// |-------|------|-------------------|-----------------|
-        /// | 1 | IniciarDiagnostico | Em Diagn√≥stico | Recebida |
-        /// | 2 | EnviarParaAprovacao | Aguardando Aprova√ß√£o | Em Diagn√≥stico (requer ‚â• 1 item) |
-        /// | 3 | Aprovar | Em Execu√ß√£o | Aguardando Aprova√ß√£o |
-        /// | 4 | Finalizar | Finalizada | Em Execu√ß√£o (requer ‚â• 1 item) |
-        /// | 5 | Entregar | Entregue | Finalizada |
-        /// | 6 | Cancelar | Cancelada | Qualquer (exceto Finalizada e Entregue) |
-        ///
-        /// Exemplo de body:
-        ///
-        ///     { "acao": 1 }
-        ///
-        /// Para cancelar com motivo:
-        ///
-        ///     { "acao": 6, "observacoes": "Cliente desistiu do servi√ßo" }
+        /// O sistema move automaticamente o status para <b>AguardandoAprovacao</b>.
+        /// Requer que a OS esteja em <b>EmDiagnostico</b> e possua ao menos um serviÁo ou peÁa.
+        /// O cliente poder· aprovar via: <c>POST /api/publico/acompanhamento/{numero}/aprovar</c>
         /// </remarks>
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> AlterarStatus(
-            Guid id,
-            [FromBody] AlterarStatusOrdemServicoRequest request,
-            CancellationToken cancellationToken)
+        [HttpPost("{id}/concluir-diagnostico")]
+        public async Task<IActionResult> ConcluirDiagnostico(Guid id, CancellationToken cancellationToken)
         {
             try
             {
-                request.OrdemServicoId = id;
-                var response = await _alterarStatusUseCase.HandleAsync(request, cancellationToken);
+                var response = await _concluirDiagnosticoUseCase.HandleAsync(id, cancellationToken);
                 return Ok(response);
             }
             catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
             catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao alterar status da OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao alterar status" });
+                _logger.LogError(ex, "Erro ao concluir diagnostico da OS {OsId}", id);
+                return StatusCode(500, new { message = "Erro ao concluir diagnÛstico" });
             }
         }
 
-        /// <summary>Registra o in√≠cio ou fim da execu√ß√£o de um servi√ßo individual na OS.</summary>
+        /// <summary>Registra o inÌcio ou fim da execuÁ„o de um serviÁo individual na OS.</summary>
         /// <remarks>
-        /// Envie o campo **acao** com um dos valores:
-        /// - `iniciar` ‚Äî marca o in√≠cio da execu√ß√£o do servi√ßo (requer OS Em Execu√ß√£o)
-        /// - `finalizar` ‚Äî marca o fim da execu√ß√£o e registra a dura√ß√£o
+        /// Envie o campo <b>acao</b> com um dos valores:
+        /// - <c>iniciar</c> ó marca o inÌcio (requer OS em <b>EmExecucao</b>)
+        /// - <c>finalizar</c> ó marca o fim e registra a duraÁ„o. Se for o ˙ltimo serviÁo, a OS avanÁa automaticamente para <b>Finalizada</b>
         ///
-        /// Exemplo:
-        ///
-        ///     { "acao": "iniciar" }
+        /// Exemplo: <c>{ "acao": "iniciar" }</c>
         /// </remarks>
         [HttpPut("{id}/servicos/{servicoId}/execucao")]
         public async Task<IActionResult> RegistrarExecucaoServico(
@@ -215,38 +204,14 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao registrar execucao do servico {ServicoId} na OS {OsId}", servicoId, id);
-                return StatusCode(500, new { message = "Erro ao registrar execucao do servico" });
+                return StatusCode(500, new { message = "Erro ao registrar execuÁ„o do serviÁo" });
             }
         }
 
-        /// <summary>T√©cnico conclui o diagn√≥stico ‚Äî OS vai automaticamente para Aguardando Aprova√ß√£o.</summary>
+        /// <summary>Registra a entrega do veÌculo ao cliente.</summary>
         /// <remarks>
-        /// A√ß√£o sem√¢ntica: o t√©cnico sinaliza que o diagn√≥stico foi conclu√≠do e o or√ßamento est√° pronto.
-        /// O sistema move automaticamente o status para **AguardandoAprovacao**.
-        /// Requer que a OS esteja em **EmDiagnostico** e possua ao menos um servi√ßo ou pe√ßa.
-        /// </remarks>
-        [HttpPost("{id}/concluir-diagnostico")]
-        public async Task<IActionResult> ConcluirDiagnostico(Guid id, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var response = await _concluirDiagnosticoUseCase.HandleAsync(id, cancellationToken);
-                return Ok(response);
-            }
-            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
-            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao concluir diagnostico da OS {OsId}", id);
-                return StatusCode(500, new { message = "Erro ao concluir diagn√≥stico" });
-            }
-        }
-
-        /// <summary>Registra a entrega do ve√≠culo ao cliente ‚Äî OS vai automaticamente para Entregue.</summary>
-        /// <remarks>
-        /// A√ß√£o sem√¢ntica: o atendente confirma que o ve√≠culo foi fisicamente entregue ao cliente.
-        /// O sistema move automaticamente o status para **Entregue** e registra o timestamp.
-        /// Requer que a OS esteja em **Finalizada**.
+        /// O sistema move automaticamente o status para <b>Entregue</b> e registra o timestamp da entrega.
+        /// Requer que a OS esteja em <b>Finalizada</b>.
         /// </remarks>
         [HttpPost("{id}/registrar-entrega")]
         public async Task<IActionResult> RegistrarEntrega(Guid id, CancellationToken cancellationToken)
@@ -265,10 +230,35 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Calcula o tempo m√©dio de execu√ß√£o dos servi√ßos.
-        /// Aceita filtro opcional de per√≠odo.
-        /// </summary>
+        /// <summary>Cancela uma Ordem de ServiÁo.</summary>
+        /// <remarks>
+        /// Permitido em qualquer status, exceto <b>Finalizada</b> e <b>Entregue</b>.
+        ///
+        /// Exemplo: <c>{ "motivo": "Cliente desistiu do serviÁo" }</c>
+        /// </remarks>
+        [HttpPost("{id}/cancelar")]
+        public async Task<IActionResult> Cancelar(
+            Guid id,
+            [FromBody] CancelarOrdemServicoBody body,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _cancelarUseCase.HandleAsync(
+                    new CancelarOrdemServicoRequest(id, body.Motivo),
+                    cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao cancelar OS {OsId}", id);
+                return StatusCode(500, new { message = "Erro ao cancelar a OS" });
+            }
+        }
+
+        /// <summary>Calcula o tempo mÈdio de execuÁ„o das OS finalizadas. Aceita filtro de perÌodo.</summary>
         [HttpGet("relatorios/tempo-medio-execucao")]
         public async Task<IActionResult> TempoMedioExecucao(
             [FromQuery] DateTime? periodoInicio,
@@ -283,9 +273,10 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao calcular tempo medio de execucao");
-                return StatusCode(500, new { message = "Erro ao calcular tempo m√©dio de execu√ß√£o" });
+                return StatusCode(500, new { message = "Erro ao calcular tempo mÈdio de execuÁ„o" });
             }
         }
     }
+
+    public record CancelarOrdemServicoBody(string? Motivo);
 }
-        

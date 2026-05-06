@@ -133,39 +133,27 @@ namespace OficinaMecanica.Tests.Integration
             });
             Assert.Equal(HttpStatusCode.OK, addPeca.StatusCode);
 
-            // Iniciar Diagnóstico
-            var iniciar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/status", new
-            {
-                acao = 1 // IniciarDiagnostico
-            });
-            Assert.Equal(HttpStatusCode.OK, iniciar.StatusCode);
+            // Técnico conclui diagnóstico ? status AguardandoAprovacao (automático)
+            var concluir = await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
+            Assert.Equal(HttpStatusCode.OK, concluir.StatusCode);
 
-            // Enviar para Aprovação
-            var aprovar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/status", new
-            {
-                acao = 2 // EnviarParaAprovacao
-            });
+            // Cliente aprova via endpoint público ? status EmExecucao (automático)
+            var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>();
+            var aprovar = await _client.PostAsync($"/api/publico/acompanhamento/{osNumero!.Numero}/aprovar", null);
             Assert.Equal(HttpStatusCode.OK, aprovar.StatusCode);
 
-            // Aprovar
-            var executar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/status", new
-            {
-                acao = 3 // Aprovar
-            });
-            Assert.Equal(HttpStatusCode.OK, executar.StatusCode);
+            // Registrar entrega ? status Entregue (automático após Finalizar)
+            // Primeiro finaliza manualmente (sem serviços individuais para executar)
+            // Neste teste não há execução de serviço individual, então finalizamos via cancelar não.
+            // Vamos adicionar execução do serviço para acionar a auto-finalização
+            var execIniciar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "iniciar" });
+            Assert.Equal(HttpStatusCode.OK, execIniciar.StatusCode);
 
-            // Finalizar
-            var finalizar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/status", new
-            {
-                acao = 4 // Finalizar
-            });
-            Assert.Equal(HttpStatusCode.OK, finalizar.StatusCode);
+            var execFinalizar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "finalizar" });
+            Assert.Equal(HttpStatusCode.OK, execFinalizar.StatusCode); // auto-finaliza a OS
 
-            // Entregar
-            var entregar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/status", new
-            {
-                acao = 5 // Entregar
-            });
+            // Registrar entrega ? status Entregue (automático)
+            var entregar = await _client.PostAsync($"/api/ordens-servico/{osId}/registrar-entrega", null);
             Assert.Equal(HttpStatusCode.OK, entregar.StatusCode);
 
             // GET para confirmar estado final
@@ -174,7 +162,7 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         [Fact]
-        public async Task AlterarStatus_StatusInvalido_DeveRetornar400()
+        public async Task ConcluirDiagnostico_SemItens_DeveRetornar400()
         {
             await AutenticarAsync();
             var clienteId = await CriarClienteAsync("147.258.369-82", "Cliente Status Inv");
@@ -186,11 +174,8 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
 
-            // Tentar entregar direto (transição inválida)
-            var response = await _client.PutAsJsonAsync($"/api/ordens-servico/{os!.Id}/status", new
-            {
-                acao = 5 // Entregar sem passar pelas etapas
-            });
+            // Tentar concluir diagnóstico sem itens (transição inválida)
+            var response = await _client.PostAsync($"/api/ordens-servico/{os!.Id}/concluir-diagnostico", null);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
@@ -207,9 +192,9 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
 
-            var response = await _client.PutAsJsonAsync($"/api/ordens-servico/{os!.Id}/status", new
+            var response = await _client.PostAsJsonAsync($"/api/ordens-servico/{os!.Id}/cancelar", new
             {
-                acao = 6 // Cancelar
+                motivo = "Cliente desistiu do serviço"
             });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }

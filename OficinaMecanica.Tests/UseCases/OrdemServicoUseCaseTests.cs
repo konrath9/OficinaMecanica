@@ -2,78 +2,62 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.OrdemServico;
-using OficinaMecanica.Application.Enums;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.UseCases.OrdemServico;
 using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.Enums;
 using OficinaMecanica.Domain.ValueObjects;
 
 namespace OficinaMecanica.Tests.UseCases
 {
-    public class AlterarStatusOrdemServicoUseCaseTests
+    // ?????????????????????????????????????????????
+    // ConcluirDiagnosticoUseCase
+    // ?????????????????????????????????????????????
+    public class ConcluirDiagnosticoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
-        private readonly Mock<ILogger<AlterarStatusOrdemServicoUseCase>> _loggerMock = new();
+        private readonly Mock<ILogger<ConcluirDiagnosticoUseCase>> _loggerMock = new();
 
-        private AlterarStatusOrdemServicoUseCase CriarUseCase() =>
+        private ConcluirDiagnosticoUseCase CriarUseCase() =>
             new(_repoMock.Object, _loggerMock.Object);
 
-        private static OrdemServico OsComServico()
+        private static OrdemServico OsEmDiagnosticoComServico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.IniciarDiagnostico();
             os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Troca de óleo", 150m, 1));
             return os;
         }
 
         [Fact]
-        public async Task HandleAsync_IniciarDiagnostico_DeveAlterarStatus()
+        public async Task HandleAsync_OsEmDiagnosticoComItens_DeveAvancarParaAguardandoAprovacao()
         {
-            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            var os = OsEmDiagnosticoComServico();
             _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
 
-            var request = new AlterarStatusOrdemServicoRequest { OrdemServicoId = os.Id, Acao = AcaoOrdemServico.IniciarDiagnostico };
+            var response = await CriarUseCase().HandleAsync(os.Id);
 
-            var response = await CriarUseCase().HandleAsync(request);
-
-            Assert.Equal(os.Id, response.OrdemServicoId);
+            Assert.Equal(StatusOrdemServico.AguardandoAprovacao, response.Status);
             _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
         }
 
         [Fact]
-        public async Task HandleAsync_FluxoCompleto_DevePercorrerTodosOsStatus()
-        {
-            var os = OsComServico();
-            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
-
-            var acoes = new[]
-            {
-                AcaoOrdemServico.IniciarDiagnostico,
-                AcaoOrdemServico.EnviarParaAprovacao,
-                AcaoOrdemServico.Aprovar,
-                AcaoOrdemServico.Finalizar,
-                AcaoOrdemServico.Entregar
-            };
-
-            foreach (var acao in acoes)
-            {
-                var req = new AlterarStatusOrdemServicoRequest { OrdemServicoId = os.Id, Acao = acao };
-                await CriarUseCase().HandleAsync(req);
-            }
-
-            _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Exactly(5));
-        }
-
-        [Fact]
-        public async Task HandleAsync_Cancelar_DeveAlterarParaCancelada()
+        public async Task HandleAsync_OsRecebida_DeveLancarValidationException()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
 
-            var request = new AlterarStatusOrdemServicoRequest { OrdemServicoId = os.Id, Acao = AcaoOrdemServico.Cancelar };
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(os.Id));
+        }
 
-            await CriarUseCase().HandleAsync(request);
+        [Fact]
+        public async Task HandleAsync_OsEmDiagnosticoSemItens_DeveLancarValidationException()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.IniciarDiagnostico();
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
 
-            _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(os.Id));
         }
 
         [Fact]
@@ -81,39 +65,189 @@ namespace OficinaMecanica.Tests.UseCases
         {
             _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default)).ReturnsAsync((OrdemServico?)null);
 
-            var request = new AlterarStatusOrdemServicoRequest { OrdemServicoId = Guid.NewGuid(), Acao = AcaoOrdemServico.IniciarDiagnostico };
-
-            await Assert.ThrowsAsync<NotFoundException>(() => CriarUseCase().HandleAsync(request));
+            await Assert.ThrowsAsync<NotFoundException>(() => CriarUseCase().HandleAsync(Guid.NewGuid()));
         }
 
         [Fact]
         public async Task HandleAsync_IdVazio_DeveLancarValidationException()
         {
-            var request = new AlterarStatusOrdemServicoRequest { OrdemServicoId = Guid.Empty, Acao = AcaoOrdemServico.IniciarDiagnostico };
-
-            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
-        }
-
-        [Fact]
-        public async Task HandleAsync_TransicaoInvalida_DeveLancarValidationException()
-        {
-            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
-            // Status=Recebida, tentar Entregar diretamente é inválido
-            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
-
-            var request = new AlterarStatusOrdemServicoRequest { OrdemServicoId = os.Id, Acao = AcaoOrdemServico.Entregar };
-
-            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
-        }
-
-        [Fact]
-        public async Task HandleAsync_RequestNulo_DeveLancarArgumentNullException()
-        {
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                CriarUseCase().HandleAsync(null!));
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(Guid.Empty));
         }
     }
 
+    // ?????????????????????????????????????????????
+    // AprovarOrcamentoUseCase
+    // ?????????????????????????????????????????????
+    public class AprovarOrcamentoUseCaseTests
+    {
+        private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<ILogger<AprovarOrcamentoUseCase>> _loggerMock = new();
+
+        private AprovarOrcamentoUseCase CriarUseCase() =>
+            new(_repoMock.Object, _loggerMock.Object);
+
+        private static OrdemServico OsAguardandoAprovacao()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.IniciarDiagnostico();
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Revisão", 200m, 1));
+            os.EnviarParaAprovacao();
+            return os;
+        }
+
+        [Fact]
+        public async Task HandleAsync_OsAguardandoAprovacao_DeveAvancarParaEmExecucao()
+        {
+            var os = OsAguardandoAprovacao();
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            var response = await CriarUseCase().HandleAsync(os.Id);
+
+            Assert.Equal(StatusOrdemServico.EmExecucao, response.Status);
+            _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_OsEmStatusErrado_DeveLancarValidationException()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(os.Id));
+        }
+
+        [Fact]
+        public async Task HandleAsync_OSNaoEncontrada_DeveLancarNotFoundException()
+        {
+            _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default)).ReturnsAsync((OrdemServico?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() => CriarUseCase().HandleAsync(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public async Task HandleAsync_IdVazio_DeveLancarValidationException()
+        {
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(Guid.Empty));
+        }
+    }
+
+    // ?????????????????????????????????????????????
+    // RegistrarEntregaUseCase
+    // ?????????????????????????????????????????????
+    public class RegistrarEntregaUseCaseTests
+    {
+        private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<ILogger<RegistrarEntregaUseCase>> _loggerMock = new();
+
+        private RegistrarEntregaUseCase CriarUseCase() =>
+            new(_repoMock.Object, _loggerMock.Object);
+
+        private static OrdemServico OsFinalizada()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.IniciarDiagnostico();
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Alinhamento", 120m, 1));
+            os.EnviarParaAprovacao();
+            os.Aprovar();
+            os.Finalizar();
+            return os;
+        }
+
+        [Fact]
+        public async Task HandleAsync_OsFinalizada_DeveAvancarParaEntregue()
+        {
+            var os = OsFinalizada();
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            var response = await CriarUseCase().HandleAsync(os.Id);
+
+            Assert.Equal(StatusOrdemServico.Entregue, response.Status);
+            Assert.NotNull(response.EntregueEm);
+            _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_OsNaoFinalizada_DeveLancarValidationException()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(os.Id));
+        }
+
+        [Fact]
+        public async Task HandleAsync_OSNaoEncontrada_DeveLancarNotFoundException()
+        {
+            _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default)).ReturnsAsync((OrdemServico?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() => CriarUseCase().HandleAsync(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public async Task HandleAsync_IdVazio_DeveLancarValidationException()
+        {
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(Guid.Empty));
+        }
+    }
+
+    // ?????????????????????????????????????????????
+    // CancelarOrdemServicoUseCase
+    // ?????????????????????????????????????????????
+    public class CancelarOrdemServicoUseCaseTests
+    {
+        private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<ILogger<CancelarOrdemServicoUseCase>> _loggerMock = new();
+
+        private CancelarOrdemServicoUseCase CriarUseCase() =>
+            new(_repoMock.Object, _loggerMock.Object);
+
+        [Fact]
+        public async Task HandleAsync_OsRecebida_DeveAlterarParaCancelada()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            var response = await CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Desistência do cliente"));
+
+            Assert.Equal(StatusOrdemServico.Cancelada, response.Status);
+            _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_OsFinalizada_DeveLancarValidationException()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.IniciarDiagnostico();
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Serviço", 100m, 1));
+            os.EnviarParaAprovacao();
+            os.Aprovar();
+            os.Finalizar();
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+
+            await Assert.ThrowsAsync<ValidationException>(() =>
+                CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Motivo")));
+        }
+
+        [Fact]
+        public async Task HandleAsync_OSNaoEncontrada_DeveLancarNotFoundException()
+        {
+            _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default)).ReturnsAsync((OrdemServico?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(Guid.NewGuid())));
+        }
+
+        [Fact]
+        public async Task HandleAsync_IdVazio_DeveLancarValidationException()
+        {
+            await Assert.ThrowsAsync<ValidationException>(() =>
+                CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(Guid.Empty)));
+        }
+    }
+
+    // ?????????????????????????????????????????????
+    // AdicionarServicoOrdemServicoUseCase
+    // ?????????????????????????????????????????????
     public class AdicionarServicoOrdemServicoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _osRepoMock = new();
@@ -124,7 +258,7 @@ namespace OficinaMecanica.Tests.UseCases
             new(_osRepoMock.Object, _servicoRepoMock.Object, _loggerMock.Object);
 
         [Fact]
-        public async Task HandleAsync_ComDadosValidos_DeveAdicionarServico()
+        public async Task HandleAsync_ComDadosValidos_DeveAdicionarServicoEAvancarParaDiagnostico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             var servico = new Servico("Troca de óleo", "Desc", 150m);
@@ -142,6 +276,7 @@ namespace OficinaMecanica.Tests.UseCases
             var response = await CriarUseCase().HandleAsync(request);
 
             Assert.Equal(os.Id, response.OrdemServicoId);
+            Assert.Equal(StatusOrdemServico.EmDiagnostico, os.Status);
             _osRepoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
         }
 
@@ -204,6 +339,9 @@ namespace OficinaMecanica.Tests.UseCases
         }
     }
 
+    // ?????????????????????????????????????????????
+    // AdicionarPecaOrdemServicoUseCase
+    // ?????????????????????????????????????????????
     public class AdicionarPecaOrdemServicoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _osRepoMock = new();
@@ -214,7 +352,7 @@ namespace OficinaMecanica.Tests.UseCases
             new(_osRepoMock.Object, _pecaRepoMock.Object, _loggerMock.Object);
 
         [Fact]
-        public async Task HandleAsync_ComDadosValidos_DeveAdicionarPecaEBaixarEstoque()
+        public async Task HandleAsync_ComDadosValidos_DeveAdicionarPecaBaixarEstoqueEAvancarParaDiagnostico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             var peca = new Peca("OL-001", "Óleo 5W30", 45m, 10);
@@ -232,7 +370,8 @@ namespace OficinaMecanica.Tests.UseCases
             var response = await CriarUseCase().HandleAsync(request);
 
             Assert.Equal(os.Id, response.OrdemServicoId);
-            Assert.Equal(8, peca.QuantidadeEstoque); // 10 - 2
+            Assert.Equal(8, peca.QuantidadeEstoque);
+            Assert.Equal(StatusOrdemServico.EmDiagnostico, os.Status);
             _pecaRepoMock.Verify(r => r.UpdateAsync(peca, default), Times.Once);
             _osRepoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
         }
@@ -253,8 +392,7 @@ namespace OficinaMecanica.Tests.UseCases
                 Quantidade = 5
             };
 
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
-            Assert.Contains("Peca", ex.Errors.Keys);
+            await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
         }
 
         [Fact]

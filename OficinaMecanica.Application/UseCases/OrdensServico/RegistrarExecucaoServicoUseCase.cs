@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.Interfaces.Repositories;
 
-namespace OficinaMecanica.Application.UseCases.WorkOrders
+namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
     public record RegistrarExecucaoServicoRequest(Guid OrdemServicoId, Guid ServicoId, string Acao);
 

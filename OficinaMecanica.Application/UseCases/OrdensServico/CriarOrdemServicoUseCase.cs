@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
-using OficinaMecanica.Application.DTOs.WorkOrders;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
 using OficinaMecanica.Domain.Entities;
 
-namespace OficinaMecanica.Application.UseCases.WorkOrders
+namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
     public class CriarOrdemServicoUseCase
     {

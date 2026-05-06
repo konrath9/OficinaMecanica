@@ -1,6 +1,6 @@
 using OficinaMecanica.Domain.Enums;
 
-namespace OficinaMecanica.Application.DTOs.WorkOrders
+namespace OficinaMecanica.Application.DTOs.OrdemServico
 {
     /// <summary>
     /// Resposta pública para acompanhamento da OS pelo cliente (sem dados sensíveis)

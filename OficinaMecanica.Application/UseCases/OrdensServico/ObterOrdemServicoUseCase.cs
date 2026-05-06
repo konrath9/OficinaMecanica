@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
-using OficinaMecanica.Application.DTOs.WorkOrders;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 
-namespace OficinaMecanica.Application.UseCases.WorkOrders
+namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
     public class ObterOrdemServicoUseCase
     {

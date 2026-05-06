@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using OficinaMecanica.Application.Common.Exceptions;
-using OficinaMecanica.Application.DTOs.WorkOrders;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
-using OficinaMecanica.Application.UseCases.WorkOrders;
+using OficinaMecanica.Application.UseCases.OrdemServico;
 using OficinaMecanica.Domain.Entities;
 
 namespace OficinaMecanica.Tests.UseCases

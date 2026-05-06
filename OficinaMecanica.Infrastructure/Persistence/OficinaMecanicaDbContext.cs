@@ -34,10 +34,9 @@ namespace OficinaMecanica.Infrastructure.Persistence
             // Keys and indexes use standard naming (pk_, ix_, fk_) without snake_case conversion
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
-                // Table names: WorkOrders -> work_orders
+                // Table names: OrdemServico -> ordens_servico
                 entity.SetTableName(entity.GetTableName()?.ToSnakeCase());
 
-                // Column names: WorkOrderId -> work_order_id
                 foreach (var property in entity.GetProperties())
                 {
                     property.SetColumnName(property.GetColumnName().ToSnakeCase());

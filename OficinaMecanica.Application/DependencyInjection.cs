@@ -4,7 +4,7 @@ using OficinaMecanica.Application.UseCases.Clientes;
 using OficinaMecanica.Application.UseCases.Pecas;
 using OficinaMecanica.Application.UseCases.Servicos;
 using OficinaMecanica.Application.UseCases.Veiculos;
-using OficinaMecanica.Application.UseCases.WorkOrders;
+using OficinaMecanica.Application.UseCases.OrdemServico;
 
 namespace OficinaMecanica.Application
 {

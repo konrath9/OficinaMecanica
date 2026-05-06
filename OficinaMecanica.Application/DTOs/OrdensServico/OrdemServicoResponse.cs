@@ -1,6 +1,6 @@
 using OficinaMecanica.Domain.Enums;
 
-namespace OficinaMecanica.Application.DTOs.WorkOrders
+namespace OficinaMecanica.Application.DTOs.OrdemServico
 {
     public class OrdemServicoResponse
     {

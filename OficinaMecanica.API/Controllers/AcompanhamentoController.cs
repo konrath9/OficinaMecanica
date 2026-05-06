@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.UseCases.OrdemServico;
@@ -5,28 +6,29 @@ using OficinaMecanica.Application.UseCases.OrdemServico;
 namespace OficinaMecanica.API.Controllers
 {
     /// <summary>
-    /// Endpoints públicos — não requerem autenticação.
-    /// Permite que o cliente final acompanhe o status da OS e aprove o orçamento.
+    /// Permite que o cliente acompanhe o status da OS e aprove o orçamento.
+    /// Requer autenticação JWT — o cliente cria uma conta e faz login normalmente.
     /// </summary>
+    [Authorize]
     [ApiController]
-    [Route("api/publico/acompanhamento")]
-    public class AcompanhamentoPublicoController : ControllerBase
+    [Route("api/acompanhamento")]
+    public class AcompanhamentoController : ControllerBase
     {
         private readonly AcompanharOrdemServicoUseCase _acompanharUseCase;
         private readonly AprovarOrcamentoUseCase _aprovarOrcamentoUseCase;
-        private readonly ILogger<AcompanhamentoPublicoController> _logger;
+        private readonly ILogger<AcompanhamentoController> _logger;
 
-        public AcompanhamentoPublicoController(
+        public AcompanhamentoController(
             AcompanharOrdemServicoUseCase acompanharUseCase,
             AprovarOrcamentoUseCase aprovarOrcamentoUseCase,
-            ILogger<AcompanhamentoPublicoController> logger)
+            ILogger<AcompanhamentoController> logger)
         {
             _acompanharUseCase = acompanharUseCase;
             _aprovarOrcamentoUseCase = aprovarOrcamentoUseCase;
             _logger = logger;
         }
 
-        /// <summary>Consulta pública do status de uma OS pelo número. Não expõe dados sensíveis.</summary>
+        /// <summary>Consulta o status de uma OS pelo número.</summary>
         /// <param name="numero">Número da OS (ex: OS-2024-00001)</param>
         [HttpGet("{numero}")]
         public async Task<IActionResult> AcompanharPorNumero(string numero, CancellationToken cancellationToken)

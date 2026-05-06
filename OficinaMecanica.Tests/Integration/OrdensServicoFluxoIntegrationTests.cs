@@ -137,9 +137,9 @@ namespace OficinaMecanica.Tests.Integration
             var concluir = await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
             Assert.Equal(HttpStatusCode.OK, concluir.StatusCode);
 
-            // Cliente aprova via endpoint público ? status EmExecucao (automático)
+            // Cliente aprova via endpoint autenticado ? status EmExecucao (automático)
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>();
-            var aprovar = await _client.PostAsync($"/api/publico/acompanhamento/{osNumero!.Numero}/aprovar", null);
+            var aprovar = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
             Assert.Equal(HttpStatusCode.OK, aprovar.StatusCode);
 
             // Registrar entrega ? status Entregue (automático após Finalizar)
@@ -234,10 +234,10 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         [Fact]
-        public async Task AcompanhamentoPublico_OSExistente_DeveRetornar200SemToken()
+        public async Task Acompanhamento_OSExistente_ComToken_DeveRetornar200()
         {
             await AutenticarAsync();
-            var clienteId = await CriarClienteAsync("951.462.873-09", "Cliente Publico");
+            var clienteId = await CriarClienteAsync("951.462.873-09", "Cliente Acompanhamento");
             var veiculoId = await CriarVeiculoAsync(clienteId, "PUB-0001");
 
             var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new
@@ -246,9 +246,8 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<OsResponse>();
 
-            // Remover token e consultar endpoint público
-            _client.DefaultRequestHeaders.Authorization = null;
-            var response = await _client.GetAsync($"/api/publico/acompanhamento/{os!.Numero}");
+            // Consulta com token — deve retornar 200
+            var response = await _client.GetAsync($"/api/acompanhamento/{os!.Numero}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }

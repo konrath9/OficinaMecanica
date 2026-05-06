@@ -35,6 +35,8 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
 
             builder.HasIndex(s => s.Nome)
                 .HasDatabaseName("ix_servicos_nome");
+
+            builder.HasData(SeedData.Servicos);
         }
     }
 }

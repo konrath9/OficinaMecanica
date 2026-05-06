@@ -51,6 +51,8 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
                 .HasForeignKey(v => v.ClienteId)
                 .HasConstraintName("fk_veiculos_clientes")
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasData(SeedData.Veiculos);
         }
     }
 }

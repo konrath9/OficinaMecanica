@@ -66,6 +66,35 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasDatabaseName("ix_clientes_documento");
 
                     b.ToTable("clientes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Documento = "74185296355",
+                            Email = "joao@email.com",
+                            Nome = "Joao da Silva",
+                            Telefone = "51999990001"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-0002-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Documento = "85296374100",
+                            Email = "maria@email.com",
+                            Nome = "Maria Oliveira",
+                            Telefone = "51999990002"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-0003-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Documento = "96374185200",
+                            Email = "carlos@email.com",
+                            Nome = "Carlos Pereira",
+                            Telefone = "51999990003"
+                        });
                 });
 
             modelBuilder.Entity("OficinaMecanica.Domain.Entities.OrdemServico", b =>
@@ -184,6 +213,53 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasDatabaseName("ix_pecas_codigo");
 
                     b.ToTable("pecas", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("44444444-0001-0001-0001-000000000001"),
+                            Codigo = "OL-5W30",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Nome = "Oleo Motor 5W30 1L",
+                            PrecoUnitario = 35.90m,
+                            QuantidadeEstoque = 50
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-0002-0001-0001-000000000001"),
+                            Codigo = "FO-001",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Nome = "Filtro de Oleo Universal",
+                            PrecoUnitario = 22.50m,
+                            QuantidadeEstoque = 30
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-0003-0001-0001-000000000001"),
+                            Codigo = "PF-002",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Nome = "Pastilha de Freio Dianteira",
+                            PrecoUnitario = 89.90m,
+                            QuantidadeEstoque = 20
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-0004-0001-0001-000000000001"),
+                            Codigo = "FA-003",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Nome = "Filtro de Ar Universal",
+                            PrecoUnitario = 28.00m,
+                            QuantidadeEstoque = 25
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-0005-0001-0001-000000000001"),
+                            Codigo = "VI-004",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Nome = "Vela de Ignicao (unidade)",
+                            PrecoUnitario = 18.00m,
+                            QuantidadeEstoque = 40
+                        });
                 });
 
             modelBuilder.Entity("OficinaMecanica.Domain.Entities.Servico", b =>
@@ -224,6 +300,48 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasDatabaseName("ix_servicos_nome");
 
                     b.ToTable("servicos", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("33333333-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descricao = "Troca do oleo do motor com filtro",
+                            Nome = "Troca de Oleo",
+                            Preco = 120.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-0002-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descricao = "Alinhamento das rodas dianteiras e traseiras",
+                            Nome = "Alinhamento",
+                            Preco = 90.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-0003-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descricao = "Balanceamento de todas as rodas",
+                            Nome = "Balanceamento",
+                            Preco = 80.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-0004-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descricao = "Inspecao e ajuste do sistema de freios",
+                            Nome = "Revisao de Freios",
+                            Preco = 150.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-0005-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descricao = "Revisao completa: fluidos, filtros e correia",
+                            Nome = "Revisao Geral",
+                            Preco = 350.00m
+                        });
                 });
 
             modelBuilder.Entity("OficinaMecanica.Domain.Entities.Usuario", b =>
@@ -329,6 +447,38 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         .HasDatabaseName("ix_veiculos_placa");
 
                     b.ToTable("veiculos", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("22222222-0001-0001-0001-000000000001"),
+                            Ano = 2018,
+                            ClienteId = new Guid("11111111-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Marca = "Volkswagen",
+                            Modelo = "Gol",
+                            Placa = "SED0001"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-0002-0001-0001-000000000001"),
+                            Ano = 2021,
+                            ClienteId = new Guid("11111111-0002-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Marca = "Hyundai",
+                            Modelo = "HB20",
+                            Placa = "SED0002"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-0003-0001-0001-000000000001"),
+                            Ano = 2023,
+                            ClienteId = new Guid("11111111-0003-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Marca = "Toyota",
+                            Modelo = "Corolla",
+                            Placa = "SED0003"
+                        });
                 });
 
             modelBuilder.Entity("OficinaMecanica.Domain.Entities.OrdemServico", b =>
@@ -401,6 +551,14 @@ namespace OficinaMecanica.Infrastructure.Migrations
                                 .HasMaxLength(500)
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("descricao");
+
+                            b1.Property<DateTime?>("FinalizadoEm")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("finalizado_em");
+
+                            b1.Property<DateTime?>("IniciadoEm")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("iniciado_em");
 
                             b1.Property<decimal>("PrecoUnitario")
                                 .HasPrecision(18, 2)

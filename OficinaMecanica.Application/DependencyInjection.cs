@@ -24,6 +24,7 @@ namespace OficinaMecanica.Application
             services.AddScoped<AlterarStatusOrdemServicoUseCase>();
             services.AddScoped<AcompanharOrdemServicoUseCase>();
             services.AddScoped<TempoMedioExecucaoUseCase>();
+            services.AddScoped<RegistrarExecucaoServicoUseCase>();
 
             // Clientes
             services.AddScoped<CriarClienteUseCase>();

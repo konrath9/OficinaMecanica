@@ -161,6 +161,30 @@ namespace OficinaMecanica.Domain.Entities
             UpdateModificationDate();
         }
 
+        public void IniciarExecucaoServico(Guid servicoId)
+        {
+            if (Status != StatusOrdemServico.EmExecucao)
+                throw new InvalidOperationException("A OS precisa estar Em Execucao para iniciar um servico.");
+
+            var item = _servicos.FirstOrDefault(s => s.ServicoId == servicoId)
+                ?? throw new InvalidOperationException($"Servico {servicoId} nao encontrado nesta OS.");
+
+            item.Iniciar();
+            UpdateModificationDate();
+        }
+
+        public void FinalizarExecucaoServico(Guid servicoId)
+        {
+            if (Status != StatusOrdemServico.EmExecucao)
+                throw new InvalidOperationException("A OS precisa estar Em Execucao para finalizar um servico.");
+
+            var item = _servicos.FirstOrDefault(s => s.ServicoId == servicoId)
+                ?? throw new InvalidOperationException($"Servico {servicoId} nao encontrado nesta OS.");
+
+            item.Finalizar();
+            UpdateModificationDate();
+        }
+
         public void AtualizarObservacoes(string observacoes)
         {
             Observacoes = observacoes;

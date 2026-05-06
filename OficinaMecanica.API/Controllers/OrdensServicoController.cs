@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.WorkOrders;
@@ -17,6 +18,7 @@ namespace OficinaMecanica.API.Controllers
         private readonly AdicionarPecaOrdemServicoUseCase _adicionarPecaUseCase;
         private readonly AlterarStatusOrdemServicoUseCase _alterarStatusUseCase;
         private readonly TempoMedioExecucaoUseCase _tempoMedioExecucaoUseCase;
+        private readonly RegistrarExecucaoServicoUseCase _registrarExecucaoServicoUseCase;
         private readonly ILogger<OrdensServicoController> _logger;
 
         public OrdensServicoController(
@@ -26,6 +28,7 @@ namespace OficinaMecanica.API.Controllers
             AdicionarPecaOrdemServicoUseCase adicionarPecaUseCase,
             AlterarStatusOrdemServicoUseCase alterarStatusUseCase,
             TempoMedioExecucaoUseCase tempoMedioExecucaoUseCase,
+            RegistrarExecucaoServicoUseCase registrarExecucaoServicoUseCase,
             ILogger<OrdensServicoController> logger)
         {
             _criarOrdemServicoUseCase = criarOrdemServicoUseCase;
@@ -34,6 +37,7 @@ namespace OficinaMecanica.API.Controllers
             _adicionarPecaUseCase = adicionarPecaUseCase;
             _alterarStatusUseCase = alterarStatusUseCase;
             _tempoMedioExecucaoUseCase = tempoMedioExecucaoUseCase;
+            _registrarExecucaoServicoUseCase = registrarExecucaoServicoUseCase;
             _logger = logger;
         }
 
@@ -135,6 +139,26 @@ namespace OficinaMecanica.API.Controllers
         }
 
         /// <summary>Altera o status de uma OS.</summary>
+        /// <remarks>
+        /// Envie o campo **acao** com um dos valores abaixo para avançar o fluxo da OS:
+        ///
+        /// | Valor | Ação | Status resultante | Status requerido |
+        /// |-------|------|-------------------|-----------------|
+        /// | 1 | IniciarDiagnostico | Em Diagnóstico | Recebida |
+        /// | 2 | EnviarParaAprovacao | Aguardando Aprovação | Em Diagnóstico (requer ? 1 item) |
+        /// | 3 | Aprovar | Em Execução | Aguardando Aprovação |
+        /// | 4 | Finalizar | Finalizada | Em Execução (requer ? 1 item) |
+        /// | 5 | Entregar | Entregue | Finalizada |
+        /// | 6 | Cancelar | Cancelada | Qualquer (exceto Finalizada e Entregue) |
+        ///
+        /// Exemplo de body:
+        ///
+        ///     { "acao": 1 }
+        ///
+        /// Para cancelar com motivo:
+        ///
+        ///     { "acao": 6, "observacoes": "Cliente desistiu do serviço" }
+        /// </remarks>
         [HttpPut("{id}/status")]
         public async Task<IActionResult> AlterarStatus(
             Guid id,
@@ -153,6 +177,39 @@ namespace OficinaMecanica.API.Controllers
             {
                 _logger.LogError(ex, "Erro ao alterar status da OS {OrdemServicoId}", id);
                 return StatusCode(500, new { message = "Erro ao alterar status" });
+            }
+        }
+
+        /// <summary>Registra o início ou fim da execução de um serviço individual na OS.</summary>
+        /// <remarks>
+        /// Envie o campo **acao** com um dos valores:
+        /// - `iniciar` — marca o início da execução do serviço (requer OS Em Execução)
+        /// - `finalizar` — marca o fim da execução e registra a duração
+        ///
+        /// Exemplo:
+        ///
+        ///     { "acao": "iniciar" }
+        /// </remarks>
+        [HttpPut("{id}/servicos/{servicoId}/execucao")]
+        public async Task<IActionResult> RegistrarExecucaoServico(
+            Guid id,
+            Guid servicoId,
+            [FromBody] ExecucaoServicoRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _registrarExecucaoServicoUseCase.HandleAsync(
+                    new RegistrarExecucaoServicoRequest(id, servicoId, request.Acao),
+                    cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao registrar execucao do servico {ServicoId} na OS {OsId}", servicoId, id);
+                return StatusCode(500, new { message = "Erro ao registrar execucao do servico" });
             }
         }
 

@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace OficinaMecanica.Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -159,6 +161,8 @@ namespace OficinaMecanica.Infrastructure.Migrations
                     descricao = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     preco_unitario = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     quantidade = table.Column<int>(type: "integer", nullable: false),
+                    iniciado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    finalizado_em = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ordem_servico_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -170,6 +174,50 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         principalTable: "ordens_servico",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "clientes",
+                columns: new[] { "id", "created_at", "documento", "email", "nome", "telefone", "updated_at" },
+                values: new object[,]
+                {
+                    { new Guid("11111111-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "74185296355", "joao@email.com", "Joao da Silva", "51999990001", null },
+                    { new Guid("11111111-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "85296374100", "maria@email.com", "Maria Oliveira", "51999990002", null },
+                    { new Guid("11111111-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "96374185200", "carlos@email.com", "Carlos Pereira", "51999990003", null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "pecas",
+                columns: new[] { "id", "codigo", "created_at", "nome", "preco_unitario", "quantidade_estoque", "updated_at" },
+                values: new object[,]
+                {
+                    { new Guid("44444444-0001-0001-0001-000000000001"), "OL-5W30", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Oleo Motor 5W30 1L", 35.90m, 50, null },
+                    { new Guid("44444444-0002-0001-0001-000000000001"), "FO-001", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Oleo Universal", 22.50m, 30, null },
+                    { new Guid("44444444-0003-0001-0001-000000000001"), "PF-002", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Pastilha de Freio Dianteira", 89.90m, 20, null },
+                    { new Guid("44444444-0004-0001-0001-000000000001"), "FA-003", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Ar Universal", 28.00m, 25, null },
+                    { new Guid("44444444-0005-0001-0001-000000000001"), "VI-004", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Vela de Ignicao (unidade)", 18.00m, 40, null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "servicos",
+                columns: new[] { "id", "created_at", "descricao", "nome", "preco", "updated_at" },
+                values: new object[,]
+                {
+                    { new Guid("33333333-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Troca do oleo do motor com filtro", "Troca de Oleo", 120.00m, null },
+                    { new Guid("33333333-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Alinhamento das rodas dianteiras e traseiras", "Alinhamento", 90.00m, null },
+                    { new Guid("33333333-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Balanceamento de todas as rodas", "Balanceamento", 80.00m, null },
+                    { new Guid("33333333-0004-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Inspecao e ajuste do sistema de freios", "Revisao de Freios", 150.00m, null },
+                    { new Guid("33333333-0005-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Revisao completa: fluidos, filtros e correia", "Revisao Geral", 350.00m, null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "veiculos",
+                columns: new[] { "id", "ano", "cliente_id", "created_at", "marca", "modelo", "placa", "updated_at" },
+                values: new object[,]
+                {
+                    { new Guid("22222222-0001-0001-0001-000000000001"), 2018, new Guid("11111111-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Volkswagen", "Gol", "SED0001", null },
+                    { new Guid("22222222-0002-0001-0001-000000000001"), 2021, new Guid("11111111-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Hyundai", "HB20", "SED0002", null },
+                    { new Guid("22222222-0003-0001-0001-000000000001"), 2023, new Guid("11111111-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Toyota", "Corolla", "SED0003", null }
                 });
 
             migrationBuilder.CreateIndex(

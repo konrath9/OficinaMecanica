@@ -11,6 +11,12 @@ namespace OficinaMecanica.Domain.ValueObjects
         public int Quantidade { get; private set; }
         public decimal TotalPrice => PrecoUnitario * Quantidade;
 
+        public DateTime? IniciadoEm { get; private set; }
+        public DateTime? FinalizadoEm { get; private set; }
+        public double? DuracaoHoras => IniciadoEm.HasValue && FinalizadoEm.HasValue
+            ? (FinalizadoEm.Value - IniciadoEm.Value).TotalHours
+            : null;
+
         private ItemServico() { }
 
         public ItemServico(Guid servicoId, string descricao, decimal precoUnitario, int quantidade)
@@ -31,6 +37,25 @@ namespace OficinaMecanica.Domain.ValueObjects
             Descricao = descricao;
             PrecoUnitario = precoUnitario;
             Quantidade = quantidade;
+        }
+
+        public void Iniciar()
+        {
+            if (IniciadoEm.HasValue)
+                throw new InvalidOperationException("Este servico ja foi iniciado.");
+
+            IniciadoEm = DateTime.UtcNow;
+        }
+
+        public void Finalizar()
+        {
+            if (!IniciadoEm.HasValue)
+                throw new InvalidOperationException("O servico precisa ser iniciado antes de ser finalizado.");
+
+            if (FinalizadoEm.HasValue)
+                throw new InvalidOperationException("Este servico ja foi finalizado.");
+
+            FinalizadoEm = DateTime.UtcNow;
         }
 
         public void AtualizarQuantidade(int novaQuantidade)

@@ -69,10 +69,16 @@ namespace OficinaMecanica.Infrastructure.Persistence.Repositories
                 .Where(os => os.Status == StatusOrdemServico.Finalizada || os.Status == StatusOrdemServico.Entregue);
 
             if (inicio.HasValue)
-                query = query.Where(os => os.FinalizadaEm >= inicio.Value);
+            {
+                var inicioUtc = DateTime.SpecifyKind(inicio.Value, DateTimeKind.Utc);
+                query = query.Where(os => os.FinalizadaEm >= inicioUtc);
+            }
 
             if (fim.HasValue)
-                query = query.Where(os => os.FinalizadaEm <= fim.Value);
+            {
+                var fimUtc = DateTime.SpecifyKind(fim.Value, DateTimeKind.Utc);
+                query = query.Where(os => os.FinalizadaEm <= fimUtc);
+            }
 
             return await query.ToListAsync(cancellationToken);
         }

@@ -38,6 +38,8 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
             builder.HasIndex(c => c.Documento)
                 .IsUnique()
                 .HasDatabaseName("ix_clientes_documento");
+
+            builder.HasData(SeedData.Clientes);
         }
     }
 }

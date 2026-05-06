@@ -87,50 +87,51 @@ namespace OficinaMecanica.Tests.UseCases
 
         private TempoMedioExecucaoUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
-        private static OrdemServico OsFinalizadaComTempo(double horas)
+        private static OrdemServico OsFinalizadaComServicoCronometrado(double horas)
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
-            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Serviço", 100m, 1));
+            var servicoId = Guid.NewGuid();
+            var item = new ItemServico(servicoId, "Servico", 100m, 1);
+            os.AdicionarServico(item);
             os.IniciarDiagnostico();
             os.EnviarParaAprovacao();
             os.Aprovar();
-            os.Finalizar();
 
-            // Ajusta as datas via reflexão para simular tempo de execução
-            var tipo = typeof(OrdemServico);
-            tipo.GetProperty("IniciadaEm")!
-                .SetValue(os, DateTime.UtcNow.AddHours(-horas));
-            tipo.GetProperty("FinalizadaEm")!
-                .SetValue(os, DateTime.UtcNow);
+            // Simula inicio e fim da execucao do servico individual via reflexao
+            var tipoItem = typeof(ItemServico);
+            tipoItem.GetProperty("IniciadoEm")!.SetValue(item, DateTime.UtcNow.AddHours(-horas));
+            tipoItem.GetProperty("FinalizadoEm")!.SetValue(item, DateTime.UtcNow);
+
+            os.Finalizar();
             return os;
         }
 
         [Fact]
-        public async Task HandleAsync_ComOrdens_DeveCalcularTempoMedio()
+        public async Task HandleAsync_ComOrdens_DeveCalcularTempoMedioPorServico()
         {
             var lista = new List<OrdemServico>
             {
-                OsFinalizadaComTempo(2),
-                OsFinalizadaComTempo(4)
+                OsFinalizadaComServicoCronometrado(2),
+                OsFinalizadaComServicoCronometrado(4)
             };
             _repoMock.Setup(r => r.GetFinalizadasNoPeriodoAsync(null, null, CancellationToken.None)).ReturnsAsync(lista);
 
             var response = await CriarUseCase().HandleAsync(cancellationToken: CancellationToken.None);
 
-            Assert.Equal(2, response.TotalOrdensFinalizadas);
-            Assert.True(response.TempoMedioHoras > 0);
+            Assert.Equal(2, response.TotalServicosFinalizados);
+            Assert.NotEmpty(response.PorServico);
         }
 
         [Fact]
-        public async Task HandleAsync_SemOrdens_DeveRetornarTempoZero()
+        public async Task HandleAsync_SemOrdens_DeveRetornarZero()
         {
             _repoMock.Setup(r => r.GetFinalizadasNoPeriodoAsync(null, null, CancellationToken.None))
                      .ReturnsAsync(new List<OrdemServico>());
 
             var response = await CriarUseCase().HandleAsync(cancellationToken: CancellationToken.None);
 
-            Assert.Equal(0, response.TempoMedioHoras);
-            Assert.Equal(0, response.TotalOrdensFinalizadas);
+            Assert.Equal(0, response.TotalServicosFinalizados);
+            Assert.Empty(response.PorServico);
         }
 
         [Fact]
@@ -149,15 +150,16 @@ namespace OficinaMecanica.Tests.UseCases
         }
 
         [Fact]
-        public async Task HandleAsync_OrdensSemdatas_DeveIgnorar()
+        public async Task HandleAsync_ServicosSemTimestamp_DeveIgnorar()
         {
-            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid()); // sem IniciadaEm nem FinalizadaEm
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Servico sem tempo", 100m, 1));
             _repoMock.Setup(r => r.GetFinalizadasNoPeriodoAsync(null, null, CancellationToken.None))
                      .ReturnsAsync(new List<OrdemServico> { os });
 
             var response = await CriarUseCase().HandleAsync(cancellationToken: CancellationToken.None);
 
-            Assert.Equal(0, response.TotalOrdensFinalizadas);
+            Assert.Equal(0, response.TotalServicosFinalizados);
         }
     }
 

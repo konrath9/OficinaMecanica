@@ -23,28 +23,36 @@ namespace OficinaMecanica.Application.UseCases.WorkOrders
             DateTime? periodoFim = null,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Calculando tempo medio de execucao. Periodo: {Inicio} - {Fim}", periodoInicio, periodoFim);
+            _logger.LogInformation("Calculando tempo medio de execucao por servico. Periodo: {Inicio} - {Fim}", periodoInicio, periodoFim);
 
             var ordens = await _ordemServicoRepository.GetFinalizadasNoPeriodoAsync(periodoInicio, periodoFim, cancellationToken);
 
-            var ordensComTempo = ordens
-                .Where(os => os.IniciadaEm.HasValue && os.FinalizadaEm.HasValue)
+            // Coleta todos os itens de servico com duracao registrada
+            var itensFinalizados = ordens
+                .SelectMany(os => os.Servicos)
+                .Where(s => s.IniciadoEm.HasValue && s.FinalizadoEm.HasValue)
                 .ToList();
 
-            double tempoMedioHoras = 0;
-            if (ordensComTempo.Any())
-            {
-                tempoMedioHoras = ordensComTempo
-                    .Average(os => (os.FinalizadaEm!.Value - os.IniciadaEm!.Value).TotalHours);
-            }
+            // Agrupa por ServicoId e calcula a media de duracao de cada tipo
+            var porServico = itensFinalizados
+                .GroupBy(s => new { s.ServicoId, s.Descricao })
+                .Select(g => new TempoMedioPorServicoDto
+                {
+                    ServicoId = g.Key.ServicoId,
+                    Descricao = g.Key.Descricao,
+                    TempoMedioHoras = Math.Round(g.Average(s => s.DuracaoHoras!.Value), 2),
+                    TempoMedioDias = Math.Round(g.Average(s => s.DuracaoHoras!.Value) / 24, 2),
+                    TotalExecucoes = g.Count()
+                })
+                .OrderByDescending(x => x.TempoMedioHoras)
+                .ToList();
 
             return new TempoMedioExecucaoResponse
             {
-                TempoMedioHoras = Math.Round(tempoMedioHoras, 2),
-                TempoMedioDias = Math.Round(tempoMedioHoras / 24, 2),
-                TotalOrdensFinalizadas = ordensComTempo.Count,
                 PeriodoInicio = periodoInicio,
-                PeriodoFim = periodoFim
+                PeriodoFim = periodoFim,
+                TotalServicosFinalizados = itensFinalizados.Count,
+                PorServico = porServico
             };
         }
     }

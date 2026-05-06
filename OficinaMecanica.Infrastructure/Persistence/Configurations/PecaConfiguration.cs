@@ -39,6 +39,8 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
             builder.HasIndex(p => p.Codigo)
                 .IsUnique()
                 .HasDatabaseName("ix_pecas_codigo");
+
+            builder.HasData(SeedData.Pecas);
         }
     }
 }

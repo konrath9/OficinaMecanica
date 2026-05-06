@@ -70,7 +70,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("11111111-0001-0001-0001-000000000001"),
+                            Id = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567801"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Documento = "74185296355",
                             Email = "joao@email.com",
@@ -79,7 +79,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("11111111-0002-0001-0001-000000000001"),
+                            Id = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567802"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Documento = "85296374100",
                             Email = "maria@email.com",
@@ -88,7 +88,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("11111111-0003-0001-0001-000000000001"),
+                            Id = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567803"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Documento = "96374185200",
                             Email = "carlos@email.com",
@@ -217,7 +217,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("44444444-0001-0001-0001-000000000001"),
+                            Id = new Guid("d4e5f6a7-b8c9-0123-defa-234567890001"),
                             Codigo = "OL-5W30",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Nome = "Oleo Motor 5W30 1L",
@@ -226,7 +226,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("44444444-0002-0001-0001-000000000001"),
+                            Id = new Guid("d4e5f6a7-b8c9-0123-defa-234567890002"),
                             Codigo = "FO-001",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Nome = "Filtro de Oleo Universal",
@@ -235,7 +235,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("44444444-0003-0001-0001-000000000001"),
+                            Id = new Guid("d4e5f6a7-b8c9-0123-defa-234567890003"),
                             Codigo = "PF-002",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Nome = "Pastilha de Freio Dianteira",
@@ -244,7 +244,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("44444444-0004-0001-0001-000000000001"),
+                            Id = new Guid("d4e5f6a7-b8c9-0123-defa-234567890004"),
                             Codigo = "FA-003",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Nome = "Filtro de Ar Universal",
@@ -253,7 +253,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("44444444-0005-0001-0001-000000000001"),
+                            Id = new Guid("d4e5f6a7-b8c9-0123-defa-234567890005"),
                             Codigo = "VI-004",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Nome = "Vela de Ignicao (unidade)",
@@ -304,7 +304,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("33333333-0001-0001-0001-000000000001"),
+                            Id = new Guid("c3d4e5f6-a7b8-9012-cdef-123456789001"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descricao = "Troca do oleo do motor com filtro",
                             Nome = "Troca de Oleo",
@@ -312,7 +312,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-0002-0001-0001-000000000001"),
+                            Id = new Guid("c3d4e5f6-a7b8-9012-cdef-123456789002"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descricao = "Alinhamento das rodas dianteiras e traseiras",
                             Nome = "Alinhamento",
@@ -320,7 +320,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-0003-0001-0001-000000000001"),
+                            Id = new Guid("c3d4e5f6-a7b8-9012-cdef-123456789003"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descricao = "Balanceamento de todas as rodas",
                             Nome = "Balanceamento",
@@ -328,7 +328,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-0004-0001-0001-000000000001"),
+                            Id = new Guid("c3d4e5f6-a7b8-9012-cdef-123456789004"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descricao = "Inspecao e ajuste do sistema de freios",
                             Nome = "Revisao de Freios",
@@ -336,7 +336,7 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-0005-0001-0001-000000000001"),
+                            Id = new Guid("c3d4e5f6-a7b8-9012-cdef-123456789005"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descricao = "Revisao completa: fluidos, filtros e correia",
                             Nome = "Revisao Geral",
@@ -451,9 +451,9 @@ namespace OficinaMecanica.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("22222222-0001-0001-0001-000000000001"),
+                            Id = new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678901"),
                             Ano = 2018,
-                            ClienteId = new Guid("11111111-0001-0001-0001-000000000001"),
+                            ClienteId = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567801"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Marca = "Volkswagen",
                             Modelo = "Gol",
@@ -461,9 +461,9 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("22222222-0002-0001-0001-000000000001"),
+                            Id = new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678902"),
                             Ano = 2021,
-                            ClienteId = new Guid("11111111-0002-0001-0001-000000000001"),
+                            ClienteId = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567802"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Marca = "Hyundai",
                             Modelo = "HB20",
@@ -471,9 +471,9 @@ namespace OficinaMecanica.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("22222222-0003-0001-0001-000000000001"),
+                            Id = new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678903"),
                             Ano = 2023,
-                            ClienteId = new Guid("11111111-0003-0001-0001-000000000001"),
+                            ClienteId = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567803"),
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Marca = "Toyota",
                             Modelo = "Corolla",

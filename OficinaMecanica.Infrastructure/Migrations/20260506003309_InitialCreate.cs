@@ -181,9 +181,9 @@ namespace OficinaMecanica.Infrastructure.Migrations
                 columns: new[] { "id", "created_at", "documento", "email", "nome", "telefone", "updated_at" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "74185296355", "joao@email.com", "Joao da Silva", "51999990001", null },
-                    { new Guid("11111111-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "85296374100", "maria@email.com", "Maria Oliveira", "51999990002", null },
-                    { new Guid("11111111-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "96374185200", "carlos@email.com", "Carlos Pereira", "51999990003", null }
+                    { new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567801"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "74185296355", "joao@email.com", "Joao da Silva", "51999990001", null },
+                    { new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567802"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "85296374100", "maria@email.com", "Maria Oliveira", "51999990002", null },
+                    { new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567803"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "96374185200", "carlos@email.com", "Carlos Pereira", "51999990003", null }
                 });
 
             migrationBuilder.InsertData(
@@ -191,11 +191,11 @@ namespace OficinaMecanica.Infrastructure.Migrations
                 columns: new[] { "id", "codigo", "created_at", "nome", "preco_unitario", "quantidade_estoque", "updated_at" },
                 values: new object[,]
                 {
-                    { new Guid("44444444-0001-0001-0001-000000000001"), "OL-5W30", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Oleo Motor 5W30 1L", 35.90m, 50, null },
-                    { new Guid("44444444-0002-0001-0001-000000000001"), "FO-001", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Oleo Universal", 22.50m, 30, null },
-                    { new Guid("44444444-0003-0001-0001-000000000001"), "PF-002", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Pastilha de Freio Dianteira", 89.90m, 20, null },
-                    { new Guid("44444444-0004-0001-0001-000000000001"), "FA-003", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Ar Universal", 28.00m, 25, null },
-                    { new Guid("44444444-0005-0001-0001-000000000001"), "VI-004", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Vela de Ignicao (unidade)", 18.00m, 40, null }
+                    { new Guid("d4e5f6a7-b8c9-0123-defa-234567890001"), "OL-5W30", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Oleo Motor 5W30 1L", 35.90m, 50, null },
+                    { new Guid("d4e5f6a7-b8c9-0123-defa-234567890002"), "FO-001", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Oleo Universal", 22.50m, 30, null },
+                    { new Guid("d4e5f6a7-b8c9-0123-defa-234567890003"), "PF-002", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Pastilha de Freio Dianteira", 89.90m, 20, null },
+                    { new Guid("d4e5f6a7-b8c9-0123-defa-234567890004"), "FA-003", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Filtro de Ar Universal", 28.00m, 25, null },
+                    { new Guid("d4e5f6a7-b8c9-0123-defa-234567890005"), "VI-004", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Vela de Ignicao (unidade)", 18.00m, 40, null }
                 });
 
             migrationBuilder.InsertData(
@@ -203,11 +203,11 @@ namespace OficinaMecanica.Infrastructure.Migrations
                 columns: new[] { "id", "created_at", "descricao", "nome", "preco", "updated_at" },
                 values: new object[,]
                 {
-                    { new Guid("33333333-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Troca do oleo do motor com filtro", "Troca de Oleo", 120.00m, null },
-                    { new Guid("33333333-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Alinhamento das rodas dianteiras e traseiras", "Alinhamento", 90.00m, null },
-                    { new Guid("33333333-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Balanceamento de todas as rodas", "Balanceamento", 80.00m, null },
-                    { new Guid("33333333-0004-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Inspecao e ajuste do sistema de freios", "Revisao de Freios", 150.00m, null },
-                    { new Guid("33333333-0005-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Revisao completa: fluidos, filtros e correia", "Revisao Geral", 350.00m, null }
+                    { new Guid("c3d4e5f6-a7b8-9012-cdef-123456789001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Troca do oleo do motor com filtro", "Troca de Oleo", 120.00m, null },
+                    { new Guid("c3d4e5f6-a7b8-9012-cdef-123456789002"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Alinhamento das rodas dianteiras e traseiras", "Alinhamento", 90.00m, null },
+                    { new Guid("c3d4e5f6-a7b8-9012-cdef-123456789003"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Balanceamento de todas as rodas", "Balanceamento", 80.00m, null },
+                    { new Guid("c3d4e5f6-a7b8-9012-cdef-123456789004"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Inspecao e ajuste do sistema de freios", "Revisao de Freios", 150.00m, null },
+                    { new Guid("c3d4e5f6-a7b8-9012-cdef-123456789005"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Revisao completa: fluidos, filtros e correia", "Revisao Geral", 350.00m, null }
                 });
 
             migrationBuilder.InsertData(
@@ -215,9 +215,9 @@ namespace OficinaMecanica.Infrastructure.Migrations
                 columns: new[] { "id", "ano", "cliente_id", "created_at", "marca", "modelo", "placa", "updated_at" },
                 values: new object[,]
                 {
-                    { new Guid("22222222-0001-0001-0001-000000000001"), 2018, new Guid("11111111-0001-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Volkswagen", "Gol", "SED0001", null },
-                    { new Guid("22222222-0002-0001-0001-000000000001"), 2021, new Guid("11111111-0002-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Hyundai", "HB20", "SED0002", null },
-                    { new Guid("22222222-0003-0001-0001-000000000001"), 2023, new Guid("11111111-0003-0001-0001-000000000001"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Toyota", "Corolla", "SED0003", null }
+                    { new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678901"), 2018, new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567801"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Volkswagen", "Gol", "SED0001", null },
+                    { new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678902"), 2021, new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567802"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Hyundai", "HB20", "SED0002", null },
+                    { new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678903"), 2023, new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567803"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Toyota", "Corolla", "SED0003", null }
                 });
 
             migrationBuilder.CreateIndex(

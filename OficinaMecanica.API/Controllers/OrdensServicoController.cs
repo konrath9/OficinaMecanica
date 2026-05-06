@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+ï»¿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
@@ -41,7 +41,7 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Cria uma nova Ordem de Serviço.</summary>
+        /// <summary>Cria uma nova Ordem de ServiÃ§o.</summary>
         [HttpPost]
         public async Task<IActionResult> CriarOrdemServico(
             [FromBody] CriarOrdemServicoRequest request,
@@ -61,7 +61,7 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Lista todas as Ordens de Serviço.</summary>
+        /// <summary>Lista todas as Ordens de ServiÃ§o.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -73,11 +73,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar OS");
-                return StatusCode(500, new { message = "Erro ao listar ordens de serviço" });
+                return StatusCode(500, new { message = "Erro ao listar ordens de serviÃ§o" });
             }
         }
 
-        /// <summary>Obtém uma Ordem de Serviço pelo Id.</summary>
+        /// <summary>ObtÃ©m uma Ordem de ServiÃ§o pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -94,7 +94,7 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Adiciona um serviço a uma OS.</summary>
+        /// <summary>Adiciona um serviÃ§o a uma OS.</summary>
         [HttpPost("{id}/servicos")]
         public async Task<IActionResult> AdicionarServico(
             Guid id,
@@ -112,11 +112,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar servico na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar serviço" });
+                return StatusCode(500, new { message = "Erro ao adicionar serviÃ§o" });
             }
         }
 
-        /// <summary>Adiciona uma peça a uma OS.</summary>
+        /// <summary>Adiciona uma peÃ§a a uma OS.</summary>
         [HttpPost("{id}/pecas")]
         public async Task<IActionResult> AdicionarPeca(
             Guid id,
@@ -134,20 +134,20 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar peca na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar peça" });
+                return StatusCode(500, new { message = "Erro ao adicionar peÃ§a" });
             }
         }
 
         /// <summary>Altera o status de uma OS.</summary>
         /// <remarks>
-        /// Envie o campo **acao** com um dos valores abaixo para avançar o fluxo da OS:
+        /// Envie o campo **acao** com um dos valores abaixo para avanÃ§ar o fluxo da OS:
         ///
-        /// | Valor | Ação | Status resultante | Status requerido |
+        /// | Valor | AÃ§Ã£o | Status resultante | Status requerido |
         /// |-------|------|-------------------|-----------------|
-        /// | 1 | IniciarDiagnostico | Em Diagnóstico | Recebida |
-        /// | 2 | EnviarParaAprovacao | Aguardando Aprovação | Em Diagnóstico (requer ? 1 item) |
-        /// | 3 | Aprovar | Em Execução | Aguardando Aprovação |
-        /// | 4 | Finalizar | Finalizada | Em Execução (requer ? 1 item) |
+        /// | 1 | IniciarDiagnostico | Em DiagnÃ³stico | Recebida |
+        /// | 2 | EnviarParaAprovacao | Aguardando AprovaÃ§Ã£o | Em DiagnÃ³stico (requer â‰¥ 1 item) |
+        /// | 3 | Aprovar | Em ExecuÃ§Ã£o | Aguardando AprovaÃ§Ã£o |
+        /// | 4 | Finalizar | Finalizada | Em ExecuÃ§Ã£o (requer â‰¥ 1 item) |
         /// | 5 | Entregar | Entregue | Finalizada |
         /// | 6 | Cancelar | Cancelada | Qualquer (exceto Finalizada e Entregue) |
         ///
@@ -157,7 +157,7 @@ namespace OficinaMecanica.API.Controllers
         ///
         /// Para cancelar com motivo:
         ///
-        ///     { "acao": 6, "observacoes": "Cliente desistiu do serviço" }
+        ///     { "acao": 6, "observacoes": "Cliente desistiu do serviÃ§o" }
         /// </remarks>
         [HttpPut("{id}/status")]
         public async Task<IActionResult> AlterarStatus(
@@ -180,11 +180,11 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Registra o início ou fim da execução de um serviço individual na OS.</summary>
+        /// <summary>Registra o inÃ­cio ou fim da execuÃ§Ã£o de um serviÃ§o individual na OS.</summary>
         /// <remarks>
         /// Envie o campo **acao** com um dos valores:
-        /// - `iniciar` — marca o início da execução do serviço (requer OS Em Execução)
-        /// - `finalizar` — marca o fim da execução e registra a duração
+        /// - `iniciar` â€” marca o inÃ­cio da execuÃ§Ã£o do serviÃ§o (requer OS Em ExecuÃ§Ã£o)
+        /// - `finalizar` â€” marca o fim da execuÃ§Ã£o e registra a duraÃ§Ã£o
         ///
         /// Exemplo:
         ///
@@ -214,8 +214,8 @@ namespace OficinaMecanica.API.Controllers
         }
 
         /// <summary>
-        /// Calcula o tempo médio de execução das Ordens de Serviço finalizadas.
-        /// Aceita filtro opcional de período.
+        /// Calcula o tempo mÃ©dio de execuÃ§Ã£o das Ordens de ServiÃ§o finalizadas.
+        /// Aceita filtro opcional de perÃ­odo.
         /// </summary>
         [HttpGet("relatorios/tempo-medio-execucao")]
         public async Task<IActionResult> TempoMedioExecucao(
@@ -231,7 +231,7 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao calcular tempo medio de execucao");
-                return StatusCode(500, new { message = "Erro ao calcular tempo médio de execução" });
+                return StatusCode(500, new { message = "Erro ao calcular tempo mÃ©dio de execuÃ§Ã£o" });
             }
         }
     }

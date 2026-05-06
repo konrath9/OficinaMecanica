@@ -19,6 +19,8 @@ namespace OficinaMecanica.API.Controllers
         private readonly AlterarStatusOrdemServicoUseCase _alterarStatusUseCase;
         private readonly TempoMedioExecucaoUseCase _tempoMedioExecucaoUseCase;
         private readonly RegistrarExecucaoServicoUseCase _registrarExecucaoServicoUseCase;
+        private readonly ConcluirDiagnosticoUseCase _concluirDiagnosticoUseCase;
+        private readonly RegistrarEntregaUseCase _registrarEntregaUseCase;
         private readonly ILogger<OrdensServicoController> _logger;
 
         public OrdensServicoController(
@@ -29,6 +31,8 @@ namespace OficinaMecanica.API.Controllers
             AlterarStatusOrdemServicoUseCase alterarStatusUseCase,
             TempoMedioExecucaoUseCase tempoMedioExecucaoUseCase,
             RegistrarExecucaoServicoUseCase registrarExecucaoServicoUseCase,
+            ConcluirDiagnosticoUseCase concluirDiagnosticoUseCase,
+            RegistrarEntregaUseCase registrarEntregaUseCase,
             ILogger<OrdensServicoController> logger)
         {
             _criarOrdemServicoUseCase = criarOrdemServicoUseCase;
@@ -38,6 +42,8 @@ namespace OficinaMecanica.API.Controllers
             _alterarStatusUseCase = alterarStatusUseCase;
             _tempoMedioExecucaoUseCase = tempoMedioExecucaoUseCase;
             _registrarExecucaoServicoUseCase = registrarExecucaoServicoUseCase;
+            _concluirDiagnosticoUseCase = concluirDiagnosticoUseCase;
+            _registrarEntregaUseCase = registrarEntregaUseCase;
             _logger = logger;
         }
 
@@ -213,8 +219,54 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
+        /// <summary>Técnico conclui o diagnóstico — OS vai automaticamente para Aguardando Aprovação.</summary>
+        /// <remarks>
+        /// Ação semântica: o técnico sinaliza que o diagnóstico foi concluído e o orçamento está pronto.
+        /// O sistema move automaticamente o status para **AguardandoAprovacao**.
+        /// Requer que a OS esteja em **EmDiagnostico** e possua ao menos um serviço ou peça.
+        /// </remarks>
+        [HttpPost("{id}/concluir-diagnostico")]
+        public async Task<IActionResult> ConcluirDiagnostico(Guid id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _concluirDiagnosticoUseCase.HandleAsync(id, cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao concluir diagnostico da OS {OsId}", id);
+                return StatusCode(500, new { message = "Erro ao concluir diagnóstico" });
+            }
+        }
+
+        /// <summary>Registra a entrega do veículo ao cliente — OS vai automaticamente para Entregue.</summary>
+        /// <remarks>
+        /// Ação semântica: o atendente confirma que o veículo foi fisicamente entregue ao cliente.
+        /// O sistema move automaticamente o status para **Entregue** e registra o timestamp.
+        /// Requer que a OS esteja em **Finalizada**.
+        /// </remarks>
+        [HttpPost("{id}/registrar-entrega")]
+        public async Task<IActionResult> RegistrarEntrega(Guid id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _registrarEntregaUseCase.HandleAsync(id, cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao registrar entrega da OS {OsId}", id);
+                return StatusCode(500, new { message = "Erro ao registrar entrega" });
+            }
+        }
+
         /// <summary>
-        /// Calcula o tempo médio de execução das Ordens de Serviço finalizadas.
+        /// Calcula o tempo médio de execução dos serviços.
         /// Aceita filtro opcional de período.
         /// </summary>
         [HttpGet("relatorios/tempo-medio-execucao")]

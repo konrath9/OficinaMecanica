@@ -152,6 +152,42 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
             builder.Ignore(os => os.TotalServicos);
             builder.Ignore(os => os.TotalPecas);
             builder.Ignore(os => os.TotalOrcamento);
+            builder.Ignore(os => os.ProgressoServicos);
+
+            // HistoricoStatus como Owned Type (Value Object)
+            var historicoNavigation = builder.Metadata.FindNavigation(nameof(OrdemServico.HistoricoStatus));
+            historicoNavigation?.SetPropertyAccessMode(PropertyAccessMode.Field);
+            historicoNavigation?.SetField("_historicoStatus");
+
+            builder.OwnsMany(os => os.HistoricoStatus, historico =>
+            {
+                historico.ToTable("ordem_servico_historico_status");
+
+                historico.WithOwner()
+                    .HasForeignKey("ordem_servico_id")
+                    .HasConstraintName("fk_ordem_servico_historico_status_ordens_servico");
+
+                historico.Property<int>("id")
+                    .ValueGeneratedOnAdd()
+                    .UseIdentityColumn();
+
+                historico.HasKey("id")
+                    .HasName("pk_ordem_servico_historico_status");
+
+                historico.Property(h => h.Status)
+                    .IsRequired()
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
+                historico.Property(h => h.OcorridoEm)
+                    .IsRequired();
+
+                historico.Property(h => h.Observacao)
+                    .HasMaxLength(500);
+
+                historico.HasIndex("ordem_servico_id")
+                    .HasDatabaseName("ix_ordem_servico_historico_status_ordem_servico_id");
+            });
         }
     }
 }

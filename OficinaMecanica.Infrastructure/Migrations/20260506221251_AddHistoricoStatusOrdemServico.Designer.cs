@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OficinaMecanica.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using OficinaMecanica.Infrastructure.Persistence;
 namespace OficinaMecanica.Infrastructure.Migrations
 {
     [DbContext(typeof(OficinaMecanicaDbContext))]
-    partial class OficinaMecanicaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506221251_AddHistoricoStatusOrdemServico")]
+    partial class AddHistoricoStatusOrdemServico
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -75,6 +75,13 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 throw new ValidationException("OrdemServico", ex.Message);
             }
 
+            // Automatiza: ao adicionar o primeiro servico, inicia o diagnostico automaticamente
+            if (ordemServico.Status == Domain.Enums.StatusOrdemServico.Recebida)
+            {
+                ordemServico.IniciarDiagnostico();
+                _logger.LogInformation("OS {OrdemServicoId} movida automaticamente para EmDiagnostico ao receber o primeiro servico", ordemServico.Id);
+            }
+
             await _ordemServicoRepository.UpdateAsync(ordemServico, cancellationToken);
 
             _logger.LogInformation("Servico adicionado com sucesso a OS: {OrdemServicoId}", request.OrdemServicoId);

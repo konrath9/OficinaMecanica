@@ -85,6 +85,14 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             peca.SaidaEstoque(request.Quantidade);
             await _pecaRepository.UpdateAsync(peca, cancellationToken);
+
+            // Automatiza: ao adicionar a primeira peca com OS ainda Recebida, inicia o diagnostico
+            if (ordemServico.Status == Domain.Enums.StatusOrdemServico.Recebida)
+            {
+                ordemServico.IniciarDiagnostico();
+                _logger.LogInformation("OS {OrdemServicoId} movida automaticamente para EmDiagnostico ao receber a primeira peca", ordemServico.Id);
+            }
+
             await _ordemServicoRepository.UpdateAsync(ordemServico, cancellationToken);
 
             _logger.LogInformation("Peca adicionada com sucesso a OS: {OrdemServicoId}", request.OrdemServicoId);

@@ -8,6 +8,7 @@ namespace OficinaMecanica.Domain.Entities
     {
         private readonly List<ItemServico> _servicos;
         private readonly List<ItemPeca> _pecas;
+        private readonly List<HistoricoStatusOrdemServico> _historicoStatus;
 
         public string Numero { get; private set; }
         public Guid ClienteId { get; private set; }
@@ -19,6 +20,11 @@ namespace OficinaMecanica.Domain.Entities
         public DateTime? EntregueEm { get; private set; }
         public IReadOnlyCollection<ItemServico> Servicos => _servicos.AsReadOnly();
         public IReadOnlyCollection<ItemPeca> Pecas => _pecas.AsReadOnly();
+        public IReadOnlyCollection<HistoricoStatusOrdemServico> HistoricoStatus => _historicoStatus.AsReadOnly();
+
+        /// <summary>Progresso da execução: quantos serviços foram concluídos do total.</summary>
+        public (int Concluidos, int Total) ProgressoServicos =>
+            (_servicos.Count(s => s.FinalizadoEm.HasValue), _servicos.Count);
 
         public decimal TotalServicos => _servicos.Sum(s => s.TotalPrice);
         public decimal TotalPecas => _pecas.Sum(p => p.TotalPrice);
@@ -28,6 +34,7 @@ namespace OficinaMecanica.Domain.Entities
         {
             _servicos = new List<ItemServico>();
             _pecas = new List<ItemPeca>();
+            _historicoStatus = new List<HistoricoStatusOrdemServico>();
         }
 
         public OrdemServico(string numero, Guid clienteId, Guid veiculoId, string? observacoes = null)
@@ -49,6 +56,10 @@ namespace OficinaMecanica.Domain.Entities
             Observacoes = observacoes;
             _servicos = new List<ItemServico>();
             _pecas = new List<ItemPeca>();
+            _historicoStatus = new List<HistoricoStatusOrdemServico>
+            {
+                new HistoricoStatusOrdemServico(StatusOrdemServico.Recebida, "OS criada e recebida")
+            };
         }
 
         public void AdicionarServico(ItemServico servico)
@@ -100,6 +111,7 @@ namespace OficinaMecanica.Domain.Entities
 
             Status = StatusOrdemServico.EmDiagnostico;
             IniciadaEm = DateTime.UtcNow;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.EmDiagnostico));
             UpdateModificationDate();
         }
 
@@ -112,6 +124,7 @@ namespace OficinaMecanica.Domain.Entities
                 throw new InvalidOperationException("A OS deve ter pelo menos um servico ou peca para enviar o orcamento.");
 
             Status = StatusOrdemServico.AguardandoAprovacao;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.AguardandoAprovacao, "Orçamento enviado para aprovação do cliente"));
             UpdateModificationDate();
         }
 
@@ -123,6 +136,7 @@ namespace OficinaMecanica.Domain.Entities
             Status = StatusOrdemServico.EmExecucao;
             if (IniciadaEm == null)
                 IniciadaEm = DateTime.UtcNow;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.EmExecucao, "Orçamento aprovado — execução iniciada"));
             UpdateModificationDate();
         }
 
@@ -136,6 +150,7 @@ namespace OficinaMecanica.Domain.Entities
 
             Status = StatusOrdemServico.Finalizada;
             FinalizadaEm = DateTime.UtcNow;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Finalizada, "Todos os serviços concluídos"));
             UpdateModificationDate();
         }
 
@@ -146,6 +161,7 @@ namespace OficinaMecanica.Domain.Entities
 
             Status = StatusOrdemServico.Entregue;
             EntregueEm = DateTime.UtcNow;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Entregue, "Veículo entregue ao cliente"));
             UpdateModificationDate();
         }
 
@@ -157,6 +173,7 @@ namespace OficinaMecanica.Domain.Entities
             Status = StatusOrdemServico.Cancelada;
             if (!string.IsNullOrWhiteSpace(motivo))
                 Observacoes = $"{Observacoes}\nMotivo do cancelamento: {motivo}";
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Cancelada, motivo ?? "Cancelada"));
             UpdateModificationDate();
         }
 

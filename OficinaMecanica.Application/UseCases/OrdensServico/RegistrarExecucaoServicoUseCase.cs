@@ -12,7 +12,8 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         string Descricao,
         DateTime? IniciadoEm,
         DateTime? FinalizadoEm,
-        double? DuracaoHoras);
+        double? DuracaoHoras,
+        bool OsFinalizadaAutomaticamente);
 
     public class RegistrarExecucaoServicoUseCase
     {
@@ -58,6 +59,27 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             await _ordemServicoRepository.UpdateAsync(os, cancellationToken);
 
+            // Automatiza: se todos os servicos forem finalizados, finaliza a OS automaticamente
+            var osFinalizadaAutomaticamente = false;
+            if (request.Acao.Equals("finalizar", StringComparison.OrdinalIgnoreCase))
+            {
+                var todosFinalizados = os.Servicos.Any() && os.Servicos.All(s => s.FinalizadoEm.HasValue);
+                if (todosFinalizados)
+                {
+                    try
+                    {
+                        os.Finalizar();
+                        osFinalizadaAutomaticamente = true;
+                        await _ordemServicoRepository.UpdateAsync(os, cancellationToken);
+                        _logger.LogInformation("OS {OsId} finalizada automaticamente pois todos os servicos foram concluidos", os.Id);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // OS pode nao estar em EmExecucao - nao finaliza automaticamente
+                    }
+                }
+            }
+
             var item = os.Servicos.First(s => s.ServicoId == request.ServicoId);
 
             return new RegistrarExecucaoServicoResponse(
@@ -66,7 +88,8 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 Descricao: item.Descricao,
                 IniciadoEm: item.IniciadoEm,
                 FinalizadoEm: item.FinalizadoEm,
-                DuracaoHoras: item.DuracaoHoras);
+                DuracaoHoras: item.DuracaoHoras,
+                OsFinalizadaAutomaticamente: osFinalizadaAutomaticamente);
         }
     }
 }

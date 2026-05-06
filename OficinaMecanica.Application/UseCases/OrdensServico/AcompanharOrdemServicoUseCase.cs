@@ -43,17 +43,45 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             return new AcompanhamentoOrdemServicoResponse
             {
+                OrdemServicoId = os.Id,
                 Numero = os.Numero,
                 Status = os.Status,
                 StatusDescricao = os.Status.ToString(),
+                MensagemStatus = ObterMensagemStatus(os.Status),
                 DescricaoVeiculo = veiculo is not null ? $"{veiculo.Marca} {veiculo.Modelo} {veiculo.Ano} - {veiculo.Placa}" : string.Empty,
                 Observacoes = os.Observacoes,
                 TotalOrcamento = os.TotalOrcamento,
                 CriadaEm = os.CreatedAt,
                 IniciadaEm = os.IniciadaEm,
                 FinalizadaEm = os.FinalizadaEm,
-                EntregueEm = os.EntregueEm
+                EntregueEm = os.EntregueEm,
+                Progresso = new ProgressoServicosResponse
+                {
+                    Concluidos = os.ProgressoServicos.Concluidos,
+                    Total = os.ProgressoServicos.Total
+                },
+                Historico = os.HistoricoStatus
+                    .OrderBy(h => h.OcorridoEm)
+                    .Select(h => new HistoricoStatusResponse
+                    {
+                        Status = h.Status.ToString(),
+                        OcorridoEm = h.OcorridoEm,
+                        Observacao = h.Observacao
+                    })
+                    .ToList()
             };
         }
+
+        private static string ObterMensagemStatus(Domain.Enums.StatusOrdemServico status) => status switch
+        {
+            Domain.Enums.StatusOrdemServico.Recebida => "Sua OS foi recebida e está na fila de atendimento.",
+            Domain.Enums.StatusOrdemServico.EmDiagnostico => "O técnico está realizando o diagnóstico do veículo.",
+            Domain.Enums.StatusOrdemServico.AguardandoAprovacao => "O orçamento foi enviado. Aguardando sua aprovação para iniciar os serviços.",
+            Domain.Enums.StatusOrdemServico.EmExecucao => "Os serviços estão sendo executados.",
+            Domain.Enums.StatusOrdemServico.Finalizada => "Todos os serviços foram concluídos. Seu veículo está pronto para retirada.",
+            Domain.Enums.StatusOrdemServico.Entregue => "Veículo entregue. Obrigado pela preferência!",
+            Domain.Enums.StatusOrdemServico.Cancelada => "Esta OS foi cancelada.",
+            _ => string.Empty
+        };
     }
 }

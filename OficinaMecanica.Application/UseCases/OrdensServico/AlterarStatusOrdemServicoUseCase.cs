@@ -3,7 +3,7 @@ using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Enums;
 using OficinaMecanica.Application.Interfaces.Repositories;
-using OficinaMecanica.Domain.Entities;
+using OficinaMecanica.Domain.Entities; // Ensure this using is present
 
 namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
@@ -71,7 +71,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 throw new ValidationException(errors);
         }
 
-        private static void ExecutarAcao(OrdemServico ordemServico, AcaoOrdemServico acao)
+        private static void ExecutarAcao(Domain.Entities.OrdemServico ordemServico, AcaoOrdemServico acao)
         {
             switch (acao)
             {

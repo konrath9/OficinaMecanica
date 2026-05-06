@@ -1,5 +1,4 @@
 using OficinaMecanica.Domain.Common;
-using OficinaMecanica.Domain.Common;
 using OficinaMecanica.Domain.Enums;
 using OficinaMecanica.Domain.ValueObjects;
 

@@ -40,10 +40,10 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             var numero = await _numeroGenerator.GerarAsync(cancellationToken);
 
-            OrdemServico ordemServico;
+            Domain.Entities.OrdemServico ordemServico;
             try
             {
-                ordemServico = new OrdemServico(
+                ordemServico = new Domain.Entities.OrdemServico(
                     numero: numero,
                     clienteId: request.ClienteId,
                     veiculoId: request.VeiculoId,

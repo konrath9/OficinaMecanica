@@ -6,7 +6,7 @@ using OficinaMecanica.Application.UseCases.OrdemServico;
 namespace OficinaMecanica.API.Controllers
 {
     /// <summary>
-    /// Permite que o cliente acompanhe o status da OS e aprove o orçamento.
+    /// Permite que o cliente acompanhe o status da OS, aprove ou reprove o orçamento.
     /// Requer autenticação JWT — o cliente cria uma conta e faz login normalmente.
     /// </summary>
     [Authorize]
@@ -16,15 +16,18 @@ namespace OficinaMecanica.API.Controllers
     {
         private readonly AcompanharOrdemServicoUseCase _acompanharUseCase;
         private readonly AprovarOrcamentoUseCase _aprovarOrcamentoUseCase;
+        private readonly CancelarOrdemServicoUseCase _cancelarUseCase;
         private readonly ILogger<AcompanhamentoController> _logger;
 
         public AcompanhamentoController(
             AcompanharOrdemServicoUseCase acompanharUseCase,
             AprovarOrcamentoUseCase aprovarOrcamentoUseCase,
+            CancelarOrdemServicoUseCase cancelarUseCase,
             ILogger<AcompanhamentoController> logger)
         {
             _acompanharUseCase = acompanharUseCase;
             _aprovarOrcamentoUseCase = aprovarOrcamentoUseCase;
+            _cancelarUseCase = cancelarUseCase;
             _logger = logger;
         }
 
@@ -52,7 +55,6 @@ namespace OficinaMecanica.API.Controllers
         /// A OS deve estar com status <b>AguardandoAprovacao</b>.
         /// Após a aprovação o status muda automaticamente para <b>EmExecucao</b>.
         /// </remarks>
-        /// <param name="numero">Número da OS</param>
         [HttpPost("{numero}/aprovar")]
         public async Task<IActionResult> AprovarOrcamento(string numero, CancellationToken cancellationToken)
         {
@@ -70,5 +72,40 @@ namespace OficinaMecanica.API.Controllers
                 return StatusCode(500, new { message = "Erro ao aprovar orçamento" });
             }
         }
+
+        /// <summary>Cliente reprova o orçamento — OS é cancelada automaticamente.</summary>
+        /// <remarks>
+        /// A OS deve estar com status <b>AguardandoAprovacao</b>.
+        /// Opcionalmente informe o motivo no corpo da requisição.
+        ///
+        /// Exemplo: <c>{ "motivo": "Valor acima do esperado" }</c>
+        /// </remarks>
+        [HttpPost("{numero}/reprovar")]
+        public async Task<IActionResult> ReprovarOrcamento(
+            string numero,
+            [FromBody] ReprovarOrcamentoBody body,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var os = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
+                var motivo = string.IsNullOrWhiteSpace(body.Motivo)
+                    ? "Orçamento reprovado pelo cliente"
+                    : $"Orçamento reprovado pelo cliente: {body.Motivo}";
+                var response = await _cancelarUseCase.HandleAsync(
+                    new CancelarOrdemServicoRequest(os.OrdemServicoId, motivo),
+                    cancellationToken);
+                return Ok(response);
+            }
+            catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
+            catch (NotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao reprovar orcamento da OS {Numero}", numero);
+                return StatusCode(500, new { message = "Erro ao reprovar orçamento" });
+            }
+        }
     }
+
+    public record ReprovarOrcamentoBody(string? Motivo);
 }

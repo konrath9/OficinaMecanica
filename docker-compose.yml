@@ -19,6 +19,16 @@ services:
     networks:
       - oficina_network
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: oficina_mecanica_mailpit
+    restart: always
+    ports:
+      - "8025:8025" # UI web
+      - "1025:1025" # SMTP
+    networks:
+      - oficina_network
+
   api:
     build:
       context: .
@@ -34,9 +44,15 @@ services:
       Jwt__Issuer: "OficinaMecanicaAPI"
       Jwt__Audience: "OficinaMecanicaClients"
       Jwt__ExpiracaoHoras: "24"
+      Email__Host: "mailpit"
+      Email__Port: "1025"
+      Email__RemetenteEmail: "naoresponda@oficinamecanica.com.br"
+      Email__RemetenteNome: "Oficina Mecânica"
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - oficina_network
 

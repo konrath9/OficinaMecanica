@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
+using OficinaMecanica.Application.Interfaces.Services;
 
 namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
@@ -18,13 +20,19 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
     public class RegistrarExecucaoServicoUseCase
     {
         private readonly IOrdemServicoRepository _ordemServicoRepository;
+        private readonly IClienteRepository _clienteRepository;
+        private readonly IEmailService _emailService;
         private readonly ILogger<RegistrarExecucaoServicoUseCase> _logger;
 
         public RegistrarExecucaoServicoUseCase(
             IOrdemServicoRepository ordemServicoRepository,
+            IClienteRepository clienteRepository,
+            IEmailService emailService,
             ILogger<RegistrarExecucaoServicoUseCase> logger)
         {
             _ordemServicoRepository = ordemServicoRepository;
+            _clienteRepository = clienteRepository;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -80,6 +88,9 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 }
             }
 
+            if (osFinalizadaAutomaticamente)
+                await NotificarClienteAsync(os, cancellationToken);
+
             var item = os.Servicos.First(s => s.ServicoId == request.ServicoId);
 
             return new RegistrarExecucaoServicoResponse(
@@ -90,6 +101,24 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 FinalizadoEm: item.FinalizadoEm,
                 DuracaoHoras: item.DuracaoHoras,
                 OsFinalizadaAutomaticamente: osFinalizadaAutomaticamente);
+        }
+
+        private async Task NotificarClienteAsync(OficinaMecanica.Domain.Entities.OrdemServico os, CancellationToken cancellationToken)
+        {
+            var cliente = await _clienteRepository.GetByIdAsync(os.ClienteId, cancellationToken);
+            if (string.IsNullOrWhiteSpace(cliente?.Email))
+                return;
+
+            try
+            {
+                await _emailService.EnviarNotificacaoStatusAsync(
+                    new NotificacaoStatusOrdemServico(cliente.Email, cliente.Nome, os.Numero, os.Status),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao enviar e-mail de notificacao da OS {OsId}", os.Id);
+            }
         }
     }
 }

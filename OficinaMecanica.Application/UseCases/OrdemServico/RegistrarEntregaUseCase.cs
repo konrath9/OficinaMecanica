@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
+using OficinaMecanica.Application.Interfaces.Services;
 using OficinaMecanica.Domain.Enums;
 
 namespace OficinaMecanica.Application.UseCases.OrdemServico
@@ -10,25 +12,31 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
     public class RegistrarEntregaUseCase
     {
         private readonly IOrdemServicoRepository _ordemServicoRepository;
+        private readonly IClienteRepository _clienteRepository;
+        private readonly IEmailService _emailService;
         private readonly ILogger<RegistrarEntregaUseCase> _logger;
 
         public RegistrarEntregaUseCase(
             IOrdemServicoRepository ordemServicoRepository,
+            IClienteRepository clienteRepository,
+            IEmailService emailService,
             ILogger<RegistrarEntregaUseCase> logger)
         {
             _ordemServicoRepository = ordemServicoRepository;
+            _clienteRepository = clienteRepository;
+            _emailService = emailService;
             _logger = logger;
         }
 
         public async Task<RegistrarEntregaResponse> HandleAsync(Guid ordemServicoId, CancellationToken cancellationToken = default)
         {
             if (ordemServicoId == Guid.Empty)
-                throw new ValidationException("OrdemServicoId", "Id da OS é obrigatório.");
+                throw new ValidationException("OrdemServicoId", "Id da OS ï¿½ obrigatï¿½rio.");
 
             var os = await _ordemServicoRepository.GetByIdAsync(ordemServicoId, cancellationToken)
                 ?? throw new NotFoundException("OrdemServico", ordemServicoId);
 
-            _logger.LogInformation("Registrando entrega do veículo da OS {OsId}", ordemServicoId);
+            _logger.LogInformation("Registrando entrega do veï¿½culo da OS {OsId}", ordemServicoId);
 
             try
             {
@@ -43,7 +51,27 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             _logger.LogInformation("OS {OsId} movida automaticamente para Entregue", ordemServicoId);
 
+            await NotificarClienteAsync(os, cancellationToken);
+
             return new RegistrarEntregaResponse(os.Id, os.Numero, os.Status, os.EntregueEm!.Value);
+        }
+
+        private async Task NotificarClienteAsync(OficinaMecanica.Domain.Entities.OrdemServico os, CancellationToken cancellationToken)
+        {
+            var cliente = await _clienteRepository.GetByIdAsync(os.ClienteId, cancellationToken);
+            if (string.IsNullOrWhiteSpace(cliente?.Email))
+                return;
+
+            try
+            {
+                await _emailService.EnviarNotificacaoStatusAsync(
+                    new NotificacaoStatusOrdemServico(cliente.Email, cliente.Nome, os.Numero, os.Status),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao enviar e-mail de notificacao da OS {OsId}", os.Id);
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using Moq;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
+using OficinaMecanica.Application.Interfaces.Services;
 using OficinaMecanica.Application.UseCases.OrdemServico;
 using OficinaMecanica.Domain.Entities;
 using OficinaMecanica.Domain.Enums;
@@ -16,16 +17,18 @@ namespace OficinaMecanica.Tests.UseCases
     public class ConcluirDiagnosticoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<IClienteRepository> _clienteRepoMock = new();
+        private readonly Mock<IEmailService> _emailMock = new();
         private readonly Mock<ILogger<ConcluirDiagnosticoUseCase>> _loggerMock = new();
 
         private ConcluirDiagnosticoUseCase CriarUseCase() =>
-            new(_repoMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
 
         private static OrdemServico OsEmDiagnosticoComServico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             os.IniciarDiagnostico();
-            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Troca de óleo", 150m, 1));
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Troca de ï¿½leo", 150m, 1));
             return os;
         }
 
@@ -39,6 +42,49 @@ namespace OficinaMecanica.Tests.UseCases
 
             Assert.Equal(StatusOrdemServico.AguardandoAprovacao, response.Status);
             _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteComEmail_DeveEnviarNotificacaoDeStatus()
+        {
+            var os = OsEmDiagnosticoComServico();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25", "joao@email.com");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(
+                It.Is<NotificacaoStatusOrdemServico>(n => n.DestinatarioEmail == "joao@email.com" && n.StatusAtual == StatusOrdemServico.AguardandoAprovacao),
+                default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteSemEmail_NaoDeveEnviarNotificacao()
+        {
+            var os = OsEmDiagnosticoComServico();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(It.IsAny<NotificacaoStatusOrdemServico>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandleAsync_FalhaNoEnvioDeEmail_NaoDeveImpedirRespostaDeSucesso()
+        {
+            var os = OsEmDiagnosticoComServico();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25", "joao@email.com");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+            _emailMock.Setup(e => e.EnviarNotificacaoStatusAsync(It.IsAny<NotificacaoStatusOrdemServico>(), default))
+                .ThrowsAsync(new InvalidOperationException("SMTP indisponï¿½vel"));
+
+            var response = await CriarUseCase().HandleAsync(os.Id);
+
+            Assert.Equal(StatusOrdemServico.AguardandoAprovacao, response.Status);
         }
 
         [Fact]
@@ -81,16 +127,18 @@ namespace OficinaMecanica.Tests.UseCases
     public class AprovarOrcamentoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<IClienteRepository> _clienteRepoMock = new();
+        private readonly Mock<IEmailService> _emailMock = new();
         private readonly Mock<ILogger<AprovarOrcamentoUseCase>> _loggerMock = new();
 
         private AprovarOrcamentoUseCase CriarUseCase() =>
-            new(_repoMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
 
         private static OrdemServico OsAguardandoAprovacao()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             os.IniciarDiagnostico();
-            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Revisão", 200m, 1));
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Revisï¿½o", 200m, 1));
             os.EnviarParaAprovacao();
             return os;
         }
@@ -105,6 +153,34 @@ namespace OficinaMecanica.Tests.UseCases
 
             Assert.Equal(StatusOrdemServico.EmExecucao, response.Status);
             _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteComEmail_DeveEnviarNotificacaoDeStatus()
+        {
+            var os = OsAguardandoAprovacao();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25", "joao@email.com");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(
+                It.Is<NotificacaoStatusOrdemServico>(n => n.DestinatarioEmail == "joao@email.com" && n.StatusAtual == StatusOrdemServico.EmExecucao),
+                default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteSemEmail_NaoDeveEnviarNotificacao()
+        {
+            var os = OsAguardandoAprovacao();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(It.IsAny<NotificacaoStatusOrdemServico>(), default), Times.Never);
         }
 
         [Fact]
@@ -137,10 +213,12 @@ namespace OficinaMecanica.Tests.UseCases
     public class RegistrarEntregaUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<IClienteRepository> _clienteRepoMock = new();
+        private readonly Mock<IEmailService> _emailMock = new();
         private readonly Mock<ILogger<RegistrarEntregaUseCase>> _loggerMock = new();
 
         private RegistrarEntregaUseCase CriarUseCase() =>
-            new(_repoMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
 
         private static OrdemServico OsFinalizada()
         {
@@ -164,6 +242,34 @@ namespace OficinaMecanica.Tests.UseCases
             Assert.Equal(StatusOrdemServico.Entregue, response.Status);
             Assert.NotNull(response.EntregueEm);
             _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteComEmail_DeveEnviarNotificacaoDeStatus()
+        {
+            var os = OsFinalizada();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25", "joao@email.com");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(
+                It.Is<NotificacaoStatusOrdemServico>(n => n.DestinatarioEmail == "joao@email.com" && n.StatusAtual == StatusOrdemServico.Entregue),
+                default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteSemEmail_NaoDeveEnviarNotificacao()
+        {
+            var os = OsFinalizada();
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(os.Id);
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(It.IsAny<NotificacaoStatusOrdemServico>(), default), Times.Never);
         }
 
         [Fact]
@@ -196,10 +302,12 @@ namespace OficinaMecanica.Tests.UseCases
     public class CancelarOrdemServicoUseCaseTests
     {
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
+        private readonly Mock<IClienteRepository> _clienteRepoMock = new();
+        private readonly Mock<IEmailService> _emailMock = new();
         private readonly Mock<ILogger<CancelarOrdemServicoUseCase>> _loggerMock = new();
 
         private CancelarOrdemServicoUseCase CriarUseCase() =>
-            new(_repoMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
 
         [Fact]
         public async Task HandleAsync_OsRecebida_DeveAlterarParaCancelada()
@@ -207,10 +315,41 @@ namespace OficinaMecanica.Tests.UseCases
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
 
-            var response = await CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Desistência do cliente"));
+            var response = await CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Desistï¿½ncia do cliente"));
 
             Assert.Equal(StatusOrdemServico.Cancelada, response.Status);
             _repoMock.Verify(r => r.UpdateAsync(os, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteComEmail_DeveEnviarNotificacaoComMotivo()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25", "joao@email.com");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Desistï¿½ncia do cliente"));
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(
+                It.Is<NotificacaoStatusOrdemServico>(n =>
+                    n.DestinatarioEmail == "joao@email.com" &&
+                    n.StatusAtual == StatusOrdemServico.Cancelada &&
+                    n.Observacao == "Desistï¿½ncia do cliente"),
+                default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ClienteSemEmail_NaoDeveEnviarNotificacao()
+        {
+            var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
+            var cliente = new Cliente("Joï¿½o", "529.982.247-25");
+            _repoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
+            _clienteRepoMock.Setup(r => r.GetByIdAsync(os.ClienteId, default)).ReturnsAsync(cliente);
+
+            await CriarUseCase().HandleAsync(new CancelarOrdemServicoRequest(os.Id, "Motivo"));
+
+            _emailMock.Verify(e => e.EnviarNotificacaoStatusAsync(It.IsAny<NotificacaoStatusOrdemServico>(), default), Times.Never);
         }
 
         [Fact]
@@ -218,7 +357,7 @@ namespace OficinaMecanica.Tests.UseCases
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
             os.IniciarDiagnostico();
-            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Serviço", 100m, 1));
+            os.AdicionarServico(new ItemServico(Guid.NewGuid(), "Serviï¿½o", 100m, 1));
             os.EnviarParaAprovacao();
             os.Aprovar();
             os.Finalizar();
@@ -261,7 +400,7 @@ namespace OficinaMecanica.Tests.UseCases
         public async Task HandleAsync_ComDadosValidos_DeveAdicionarServicoEAvancarParaDiagnostico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
-            var servico = new Servico("Troca de óleo", "Desc", 150m);
+            var servico = new Servico("Troca de ï¿½leo", "Desc", 150m);
 
             _osRepoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
             _servicoRepoMock.Setup(r => r.GetByIdAsync(servico.Id, default)).ReturnsAsync(servico);
@@ -355,7 +494,7 @@ namespace OficinaMecanica.Tests.UseCases
         public async Task HandleAsync_ComDadosValidos_DeveAdicionarPecaBaixarEstoqueEAvancarParaDiagnostico()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
-            var peca = new Peca("OL-001", "Óleo 5W30", 45m, 10);
+            var peca = new Peca("OL-001", "ï¿½leo 5W30", 45m, 10);
 
             _osRepoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
             _pecaRepoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);
@@ -380,7 +519,7 @@ namespace OficinaMecanica.Tests.UseCases
         public async Task HandleAsync_EstoqueInsuficiente_DeveLancarValidationException()
         {
             var os = new OrdemServico("OS-001", Guid.NewGuid(), Guid.NewGuid());
-            var peca = new Peca("OL-001", "Óleo", 45m, 1);
+            var peca = new Peca("OL-001", "ï¿½leo", 45m, 1);
 
             _osRepoMock.Setup(r => r.GetByIdAsync(os.Id, default)).ReturnsAsync(os);
             _pecaRepoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);

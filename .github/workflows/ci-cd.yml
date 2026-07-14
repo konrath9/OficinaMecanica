@@ -1,0 +1,122 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/oficinamecanica-api
+  KIND_CLUSTER_NAME: oficina-mecanica
+
+jobs:
+  build-test-deploy:
+    name: Build, test e deploy no cluster Kubernetes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache pacotes NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Testes automatizados
+        run: dotnet test --no-build -c Release --verbosity normal
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build da imagem Docker (uso local, para carregar no cluster de CI)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: OficinaMecanica.API/Dockerfile
+          tags: oficina-mecanica-api:ci
+          load: true
+          push: false
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: OficinaMecanica.API/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+
+      - name: Instalar kind CLI
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Terraform apply (cluster kind efemero + banco de dados)
+        id: tf_apply
+        working-directory: infra
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Exportar KUBECONFIG
+        working-directory: infra
+        run: echo "KUBECONFIG=$(terraform output -raw kubeconfig_path)" >> "$GITHUB_ENV"
+
+      - name: Carregar imagem no cluster kind
+        run: kind load docker-image oficina-mecanica-api:ci --name "$KIND_CLUSTER_NAME"
+
+      - name: Apontar manifesto para a imagem carregada localmente (somente nesta execucao de CI)
+        run: sed -i "s|${{ env.IMAGE_NAME }}:.*|oficina-mecanica-api:ci|" k8s/deployment.yaml
+
+      - name: Aplicar manifestos Kubernetes
+        run: kubectl apply -f k8s/
+
+      - name: Aguardar rollout dos deployments
+        run: |
+          kubectl rollout status deployment/oficina-mecanica-api -n oficina-mecanica --timeout=180s
+          kubectl rollout status deployment/mailpit -n oficina-mecanica --timeout=120s
+
+      - name: Smoke test da API
+        run: |
+          kubectl port-forward svc/oficina-mecanica-api 8080:8080 -n oficina-mecanica &
+          sleep 5
+          curl -sf http://localhost:8080/swagger/v1/swagger.json > /dev/null
+
+      - name: Terraform destroy (desprovisiona o cluster efemero de CI)
+        if: always() && steps.tf_apply.conclusion != 'skipped'
+        working-directory: infra
+        run: terraform destroy -auto-approve

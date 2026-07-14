@@ -1,0 +1,14 @@
+# Copie este arquivo para terraform.tfvars e ajuste se necessario.
+# Os defaults ja funcionam para rodar 100% local, sem nenhuma edicao.
+
+create_kind_cluster       = true
+cluster_name              = "oficina-mecanica"
+kubernetes_namespace      = "oficina-mecanica"
+postgres_user             = "postgres"
+postgres_password         = "postgres"
+postgres_db               = "oficina_mecanica"
+postgres_storage_size     = "1Gi"
+
+# Para apontar para um cluster ja existente (local ou cloud) em vez de criar um kind novo:
+# create_kind_cluster      = false
+# external_kubeconfig_path = "~/.kube/config"

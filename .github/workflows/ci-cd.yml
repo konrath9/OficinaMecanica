@@ -97,7 +97,19 @@ jobs:
         run: echo "KUBECONFIG=$(terraform output -raw kubeconfig_path)" >> "$GITHUB_ENV"
 
       - name: Carregar imagem no cluster kind
-        run: kind load docker-image oficina-mecanica-api:ci --name "$KIND_CLUSTER_NAME"
+        run: |
+          # "failed to detect containerd snapshotter" e uma corrida conhecida do kind logo
+          # apos a criacao do cluster (o node reporta Ready antes do containerd estar
+          # totalmente pronto para consultas via ctr) - repete com backoff curto.
+          for i in 1 2 3 4 5; do
+            if kind load docker-image oficina-mecanica-api:ci --name "$KIND_CLUSTER_NAME"; then
+              exit 0
+            fi
+            echo "Tentativa $i de carregar a imagem falhou, aguardando containerd ficar pronto..."
+            sleep 10
+          done
+          echo "Falha ao carregar a imagem no cluster apos 5 tentativas"
+          exit 1
 
       - name: Apontar manifesto para a imagem carregada localmente (somente nesta execucao de CI)
         run: sed -i "s|${{ env.IMAGE_NAME }}:.*|oficina-mecanica-api:ci|" k8s/deployment.yaml

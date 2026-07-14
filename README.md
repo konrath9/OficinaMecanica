@@ -239,10 +239,6 @@ A especificação completa da API é publicada via Swagger/OpenAPI:
 - Swagger UI: `http://localhost:5000/swagger` (local) ou `http://localhost:8080/swagger` (Kubernetes, via `port-forward`);
 - Documento OpenAPI (JSON): `/swagger/v1/swagger.json` — pode ser importado diretamente no Postman ou Insomnia (`Import → Link`).
 
-## Vídeo Demonstrativo
-
-[ADICIONAR LINK DO VÍDEO AQUI] — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
-
 ## Estrutura do Repositório
 
 ```

@@ -17,7 +17,7 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         // ??????????????????????????????????????????????
-        // Proteção JWT
+        // Proteï¿½ï¿½o JWT
         // ??????????????????????????????????????????????
 
         [Fact]
@@ -89,21 +89,21 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         // ??????????????????????????????????????????????
-        // Endpoint público — sem autenticação
+        // Endpoint pï¿½blico ï¿½ sem autenticaï¿½ï¿½o
         // ??????????????????????????????????????????????
 
         [Fact]
         public async Task AcompanhamentoPublico_SemToken_DeveRetornar404OuOK()
         {
-            // Sem token — endpoint público deve responder (404 = OS não encontrada, não 401)
-            var response = await _client.GetAsync("/api/publico/acompanhamento/OS-NAO-EXISTE");
+            // Sem token ï¿½ endpoint pï¿½blico deve responder (404 = OS nï¿½o encontrada, nï¿½o 401)
+            var response = await _client.GetAsync("/api/acompanhamento/OS-NAO-EXISTE");
 
             Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         // ??????????????????????????????????????????????
-        // Fluxo completo: Cliente ? Veículo ? OS
+        // Fluxo completo: Cliente ? Veï¿½culo ? OS
         // ??????????????????????????????????????????????
 
         [Fact]
@@ -113,10 +113,10 @@ namespace OficinaMecanica.Tests.Integration
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
-            // 1 — Criar cliente
+            // 1 ï¿½ Criar cliente
             var clienteResponse = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "Cliente Integração",
+                nome = "Cliente Integraï¿½ï¿½o",
                 documento = "529.982.247-25",
                 email = "integracao@teste.com",
                 telefone = "11999999999"
@@ -124,7 +124,7 @@ namespace OficinaMecanica.Tests.Integration
             Assert.Equal(HttpStatusCode.Created, clienteResponse.StatusCode);
             var cliente = await clienteResponse.Content.ReadFromJsonAsync<IdResponse>();
 
-            // 2 — Criar veículo
+            // 2 ï¿½ Criar veï¿½culo
             var veiculoResponse = await _client.PostAsJsonAsync("/api/veiculos", new
             {
                 placa = "TST1234",
@@ -136,12 +136,12 @@ namespace OficinaMecanica.Tests.Integration
             Assert.Equal(HttpStatusCode.Created, veiculoResponse.StatusCode);
             var veiculo = await veiculoResponse.Content.ReadFromJsonAsync<IdResponse>();
 
-            // 3 — Criar OS
+            // 3 ï¿½ Criar OS
             var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new
             {
                 clienteId = cliente.Id,
                 veiculoId = veiculo!.Id,
-                observacoes = "Revisão completa"
+                observacoes = "Revisï¿½o completa"
             });
             Assert.Equal(HttpStatusCode.Created, osResponse.StatusCode);
         }

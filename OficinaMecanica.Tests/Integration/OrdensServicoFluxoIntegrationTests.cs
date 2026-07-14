@@ -107,52 +107,54 @@ namespace OficinaMecanica.Tests.Integration
 
             var clienteId = await CriarClienteAsync("111.444.777-35", "Cliente Fluxo");
             var veiculoId = await CriarVeiculoAsync(clienteId, "FLX-0001");
-            var servicoId = await CriarServicoAsync("Revisão Fluxo");
+            var servicoId = await CriarServicoAsync("Revisï¿½o Fluxo");
             var pecaId = await CriarPecaAsync("FLX-001", "Filtro Fluxo", 20);
 
             // Criar OS
             var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new
             {
-                clienteId, veiculoId, observacoes = "Revisão completa"
+                clienteId, veiculoId, observacoes = "Revisï¿½o completa"
             });
             Assert.Equal(HttpStatusCode.Created, osResponse.StatusCode);
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
             var osId = os!.Id;
 
-            // Adicionar serviço
+            // Adicionar serviï¿½o
             var addServico = await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/servicos", new
             {
                 servicoId, quantidade = 1
             });
             Assert.Equal(HttpStatusCode.OK, addServico.StatusCode);
 
-            // Adicionar peça
+            // Adicionar peï¿½a
             var addPeca = await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/pecas", new
             {
                 pecaId, quantidade = 2
             });
             Assert.Equal(HttpStatusCode.OK, addPeca.StatusCode);
 
-            // Técnico conclui diagnóstico ? status AguardandoAprovacao (automático)
+            // Tï¿½cnico conclui diagnï¿½stico ? status AguardandoAprovacao (automï¿½tico)
             var concluir = await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
             Assert.Equal(HttpStatusCode.OK, concluir.StatusCode);
 
-            // Cliente aprova via endpoint autenticado ? status EmExecucao (automático)
+            // Cliente aprova via endpoint publico (sem token) ? status EmExecucao (automï¿½tico)
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>();
+            _client.DefaultRequestHeaders.Authorization = null;
             var aprovar = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
             Assert.Equal(HttpStatusCode.OK, aprovar.StatusCode);
+            await AutenticarAsync(); // restaura o token para os proximos passos administrativos
 
-            // Registrar entrega ? status Entregue (automático após Finalizar)
-            // Primeiro finaliza manualmente (sem serviços individuais para executar)
-            // Neste teste não há execução de serviço individual, então finalizamos via cancelar não.
-            // Vamos adicionar execução do serviço para acionar a auto-finalização
+            // Registrar entrega ? status Entregue (automï¿½tico apï¿½s Finalizar)
+            // Primeiro finaliza manualmente (sem serviï¿½os individuais para executar)
+            // Neste teste nï¿½o hï¿½ execuï¿½ï¿½o de serviï¿½o individual, entï¿½o finalizamos via cancelar nï¿½o.
+            // Vamos adicionar execuï¿½ï¿½o do serviï¿½o para acionar a auto-finalizaï¿½ï¿½o
             var execIniciar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "iniciar" });
             Assert.Equal(HttpStatusCode.OK, execIniciar.StatusCode);
 
             var execFinalizar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "finalizar" });
             Assert.Equal(HttpStatusCode.OK, execFinalizar.StatusCode); // auto-finaliza a OS
 
-            // Registrar entrega ? status Entregue (automático)
+            // Registrar entrega ? status Entregue (automï¿½tico)
             var entregar = await _client.PostAsync($"/api/ordens-servico/{osId}/registrar-entrega", null);
             Assert.Equal(HttpStatusCode.OK, entregar.StatusCode);
 
@@ -174,7 +176,7 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
 
-            // Tentar concluir diagnóstico sem itens (transição inválida)
+            // Tentar concluir diagnï¿½stico sem itens (transiï¿½ï¿½o invï¿½lida)
             var response = await _client.PostAsync($"/api/ordens-servico/{os!.Id}/concluir-diagnostico", null);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -194,7 +196,7 @@ namespace OficinaMecanica.Tests.Integration
 
             var response = await _client.PostAsJsonAsync($"/api/ordens-servico/{os!.Id}/cancelar", new
             {
-                motivo = "Cliente desistiu do serviço"
+                motivo = "Cliente desistiu do serviï¿½o"
             });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
@@ -234,7 +236,7 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         [Fact]
-        public async Task Acompanhamento_OSExistente_ComToken_DeveRetornar200()
+        public async Task Acompanhamento_OSExistente_SemToken_DeveRetornar200()
         {
             await AutenticarAsync();
             var clienteId = await CriarClienteAsync("951.462.873-09", "Cliente Acompanhamento");
@@ -246,8 +248,49 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<OsResponse>();
 
-            // Consulta com token — deve retornar 200
+            // Consulta sem token ï¿½ endpoint publico deve retornar 200
+            _client.DefaultRequestHeaders.Authorization = null;
             var response = await _client.GetAsync($"/api/acompanhamento/{os!.Numero}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Aprovar_SemToken_DeveRetornar200()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("753.951.486-80", "Cliente Aprovar Sem Token");
+            var veiculoId = await CriarVeiculoAsync(clienteId, "PUB-0002");
+            var servicoId = await CriarServicoAsync("Servico Aprovar Sem Token");
+
+            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
+            var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
+
+            await _client.PostAsJsonAsync($"/api/ordens-servico/{os!.Id}/servicos", new { servicoId, quantidade = 1 });
+            await _client.PostAsync($"/api/ordens-servico/{os.Id}/concluir-diagnostico", null);
+            var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{os.Id}")).Content.ReadFromJsonAsync<NumeroResponse>();
+
+            _client.DefaultRequestHeaders.Authorization = null;
+            var response = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Reprovar_SemToken_DeveRetornar200()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("428.619.375-64", "Cliente Reprovar Sem Token");
+            var veiculoId = await CriarVeiculoAsync(clienteId, "PUB-0003");
+            var servicoId = await CriarServicoAsync("Servico Reprovar Sem Token");
+
+            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
+            var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
+
+            await _client.PostAsJsonAsync($"/api/ordens-servico/{os!.Id}/servicos", new { servicoId, quantidade = 1 });
+            await _client.PostAsync($"/api/ordens-servico/{os.Id}/concluir-diagnostico", null);
+            var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{os.Id}")).Content.ReadFromJsonAsync<NumeroResponse>();
+
+            _client.DefaultRequestHeaders.Authorization = null;
+            var response = await _client.PostAsJsonAsync($"/api/acompanhamento/{osNumero!.Numero}/reprovar", new { motivo = "Valor acima do esperado" });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }

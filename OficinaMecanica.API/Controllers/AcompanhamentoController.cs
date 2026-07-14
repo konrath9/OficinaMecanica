@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
 using OficinaMecanica.Application.UseCases.OrdemServico;
@@ -6,10 +5,9 @@ using OficinaMecanica.Application.UseCases.OrdemServico;
 namespace OficinaMecanica.API.Controllers
 {
     /// <summary>
-    /// Permite que o cliente acompanhe o status da OS, aprove ou reprove o orçamento.
-    /// Requer autenticação JWT — o cliente cria uma conta e faz login normalmente.
+    /// Endpoint publico (sem autenticacao) para o cliente consultar o status da OS pelo numero
+    /// e para receber notificacoes externas de aprovacao ou recusa do orcamento.
     /// </summary>
-    [Authorize]
     [ApiController]
     [Route("api/acompanhamento")]
     public class AcompanhamentoController : ControllerBase
@@ -31,8 +29,8 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Consulta o status de uma OS pelo número.</summary>
-        /// <param name="numero">Número da OS (ex: OS-2024-00001)</param>
+        /// <summary>Consulta o status de uma OS pelo nï¿½mero.</summary>
+        /// <param name="numero">Nï¿½mero da OS (ex: OS-2024-00001)</param>
         [HttpGet("{numero}")]
         public async Task<IActionResult> AcompanharPorNumero(string numero, CancellationToken cancellationToken)
         {
@@ -50,10 +48,10 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Cliente aprova o orçamento — OS vai automaticamente para Em Execução.</summary>
+        /// <summary>Cliente aprova o orï¿½amento ï¿½ OS vai automaticamente para Em Execuï¿½ï¿½o.</summary>
         /// <remarks>
         /// A OS deve estar com status <b>AguardandoAprovacao</b>.
-        /// Após a aprovação o status muda automaticamente para <b>EmExecucao</b>.
+        /// Apï¿½s a aprovaï¿½ï¿½o o status muda automaticamente para <b>EmExecucao</b>.
         /// </remarks>
         [HttpPost("{numero}/aprovar")]
         public async Task<IActionResult> AprovarOrcamento(string numero, CancellationToken cancellationToken)
@@ -69,14 +67,14 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao aprovar orcamento da OS {Numero}", numero);
-                return StatusCode(500, new { message = "Erro ao aprovar orçamento" });
+                return StatusCode(500, new { message = "Erro ao aprovar orï¿½amento" });
             }
         }
 
-        /// <summary>Cliente reprova o orçamento — OS é cancelada automaticamente.</summary>
+        /// <summary>Cliente reprova o orï¿½amento ï¿½ OS ï¿½ cancelada automaticamente.</summary>
         /// <remarks>
         /// A OS deve estar com status <b>AguardandoAprovacao</b>.
-        /// Opcionalmente informe o motivo no corpo da requisição.
+        /// Opcionalmente informe o motivo no corpo da requisiï¿½ï¿½o.
         ///
         /// Exemplo: <c>{ "motivo": "Valor acima do esperado" }</c>
         /// </remarks>
@@ -90,8 +88,8 @@ namespace OficinaMecanica.API.Controllers
             {
                 var os = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
                 var motivo = string.IsNullOrWhiteSpace(body.Motivo)
-                    ? "Orçamento reprovado pelo cliente"
-                    : $"Orçamento reprovado pelo cliente: {body.Motivo}";
+                    ? "Orï¿½amento reprovado pelo cliente"
+                    : $"Orï¿½amento reprovado pelo cliente: {body.Motivo}";
                 var response = await _cancelarUseCase.HandleAsync(
                     new CancelarOrdemServicoRequest(os.OrdemServicoId, motivo),
                     cancellationToken);
@@ -102,7 +100,7 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao reprovar orcamento da OS {Numero}", numero);
-                return StatusCode(500, new { message = "Erro ao reprovar orçamento" });
+                return StatusCode(500, new { message = "Erro ao reprovar orï¿½amento" });
             }
         }
     }

@@ -46,10 +46,10 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Cria uma nova Ordem de Serviço.</summary>
+        /// <summary>Cria uma nova Ordem de Serviï¿½o.</summary>
         /// <remarks>
         /// Ao criar, a OS recebe automaticamente o status <b>Recebida</b>.
-        /// O status avança para <b>EmDiagnostico</b> assim que o primeiro serviço ou peça for adicionado.
+        /// O status avanï¿½a para <b>EmDiagnostico</b> assim que o primeiro serviï¿½o ou peï¿½a for adicionado.
         /// </remarks>
         [HttpPost]
         public async Task<IActionResult> CriarOrdemServico(
@@ -70,7 +70,7 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Lista todas as Ordens de Serviço.</summary>
+        /// <summary>Lista todas as Ordens de Serviï¿½o.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -82,11 +82,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar OS");
-                return StatusCode(500, new { message = "Erro ao listar ordens de serviço" });
+                return StatusCode(500, new { message = "Erro ao listar ordens de serviï¿½o" });
             }
         }
 
-        /// <summary>Obtém uma Ordem de Serviço pelo Id.</summary>
+        /// <summary>Obtï¿½m uma Ordem de Serviï¿½o pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -103,9 +103,9 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Adiciona um serviço à OS.</summary>
+        /// <summary>Adiciona um serviï¿½o ï¿½ OS.</summary>
         /// <remarks>
-        /// Se a OS estiver em <b>Recebida</b>, o status avança automaticamente para <b>EmDiagnostico</b>.
+        /// Se a OS estiver em <b>Recebida</b>, o status avanï¿½a automaticamente para <b>EmDiagnostico</b>.
         /// </remarks>
         [HttpPost("{id}/servicos")]
         public async Task<IActionResult> AdicionarServico(
@@ -124,14 +124,14 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar servico na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar serviço" });
+                return StatusCode(500, new { message = "Erro ao adicionar serviï¿½o" });
             }
         }
 
-        /// <summary>Adiciona uma peça à OS.</summary>
+        /// <summary>Adiciona uma peï¿½a ï¿½ OS.</summary>
         /// <remarks>
-        /// Se a OS estiver em <b>Recebida</b>, o status avança automaticamente para <b>EmDiagnostico</b>.
-        /// Desconta a quantidade do estoque da peça automaticamente.
+        /// Se a OS estiver em <b>Recebida</b>, o status avanï¿½a automaticamente para <b>EmDiagnostico</b>.
+        /// Desconta a quantidade do estoque da peï¿½a automaticamente.
         /// </remarks>
         [HttpPost("{id}/pecas")]
         public async Task<IActionResult> AdicionarPeca(
@@ -150,15 +150,15 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar peca na OS {OrdemServicoId}", id);
-                return StatusCode(500, new { message = "Erro ao adicionar peça" });
+                return StatusCode(500, new { message = "Erro ao adicionar peï¿½a" });
             }
         }
 
-        /// <summary>Técnico conclui o diagnóstico e envia o orçamento para aprovação do cliente.</summary>
+        /// <summary>Tï¿½cnico conclui o diagnï¿½stico e envia o orï¿½amento para aprovaï¿½ï¿½o do cliente.</summary>
         /// <remarks>
         /// O sistema move automaticamente o status para <b>AguardandoAprovacao</b>.
-        /// Requer que a OS esteja em <b>EmDiagnostico</b> e possua ao menos um serviço ou peça.
-        /// O cliente poderá aprovar via: <c>POST /api/publico/acompanhamento/{numero}/aprovar</c>
+        /// Requer que a OS esteja em <b>EmDiagnostico</b> e possua ao menos um serviï¿½o ou peï¿½a.
+        /// O cliente poderï¿½ aprovar via: <c>POST /api/acompanhamento/{numero}/aprovar</c>
         /// </remarks>
         [HttpPost("{id}/concluir-diagnostico")]
         public async Task<IActionResult> ConcluirDiagnostico(Guid id, CancellationToken cancellationToken)
@@ -173,15 +173,15 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao concluir diagnostico da OS {OsId}", id);
-                return StatusCode(500, new { message = "Erro ao concluir diagnóstico" });
+                return StatusCode(500, new { message = "Erro ao concluir diagnï¿½stico" });
             }
         }
 
-        /// <summary>Registra o início ou fim da execução de um serviço individual na OS.</summary>
+        /// <summary>Registra o inï¿½cio ou fim da execuï¿½ï¿½o de um serviï¿½o individual na OS.</summary>
         /// <remarks>
         /// Envie o campo <b>acao</b> com um dos valores:
-        /// - <c>iniciar</c> — marca o início (requer OS em <b>EmExecucao</b>)
-        /// - <c>finalizar</c> — marca o fim e registra a duração. Se for o último serviço, a OS avança automaticamente para <b>Finalizada</b>
+        /// - <c>iniciar</c> ï¿½ marca o inï¿½cio (requer OS em <b>EmExecucao</b>)
+        /// - <c>finalizar</c> ï¿½ marca o fim e registra a duraï¿½ï¿½o. Se for o ï¿½ltimo serviï¿½o, a OS avanï¿½a automaticamente para <b>Finalizada</b>
         ///
         /// Exemplo: <c>{ "acao": "iniciar" }</c>
         /// </remarks>
@@ -204,11 +204,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao registrar execucao do servico {ServicoId} na OS {OsId}", servicoId, id);
-                return StatusCode(500, new { message = "Erro ao registrar execução do serviço" });
+                return StatusCode(500, new { message = "Erro ao registrar execuï¿½ï¿½o do serviï¿½o" });
             }
         }
 
-        /// <summary>Registra a entrega do veículo ao cliente.</summary>
+        /// <summary>Registra a entrega do veï¿½culo ao cliente.</summary>
         /// <remarks>
         /// O sistema move automaticamente o status para <b>Entregue</b> e registra o timestamp da entrega.
         /// Requer que a OS esteja em <b>Finalizada</b>.
@@ -230,11 +230,11 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Cancela uma Ordem de Serviço.</summary>
+        /// <summary>Cancela uma Ordem de Serviï¿½o.</summary>
         /// <remarks>
         /// Permitido em qualquer status, exceto <b>Finalizada</b> e <b>Entregue</b>.
         ///
-        /// Exemplo: <c>{ "motivo": "Cliente desistiu do serviço" }</c>
+        /// Exemplo: <c>{ "motivo": "Cliente desistiu do serviï¿½o" }</c>
         /// </remarks>
         [HttpPost("{id}/cancelar")]
         public async Task<IActionResult> Cancelar(
@@ -258,7 +258,7 @@ namespace OficinaMecanica.API.Controllers
             }
         }
 
-        /// <summary>Calcula o tempo médio de execução das OS finalizadas. Aceita filtro de período.</summary>
+        /// <summary>Calcula o tempo mï¿½dio de execuï¿½ï¿½o das OS finalizadas. Aceita filtro de perï¿½odo.</summary>
         [HttpGet("relatorios/tempo-medio-execucao")]
         public async Task<IActionResult> TempoMedioExecucao(
             [FromQuery] DateTime? periodoInicio,
@@ -273,7 +273,7 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao calcular tempo medio de execucao");
-                return StatusCode(500, new { message = "Erro ao calcular tempo médio de execução" });
+                return StatusCode(500, new { message = "Erro ao calcular tempo mï¿½dio de execuï¿½ï¿½o" });
             }
         }
     }

@@ -241,7 +241,7 @@ A especificação completa da API é publicada via Swagger/OpenAPI:
 
 ## Vídeo Demonstrativo
 
-[ADICIONAR LINK DO VÍDEO AQUI] — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
+[https://youtu.be/MJO8dSwz9To](https://youtu.be/MJO8dSwz9To) — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
 
 ## Estrutura do Repositório
 

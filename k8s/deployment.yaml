@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oficina-mecanica-api
+  namespace: oficina-mecanica
+  labels:
+    app: oficina-mecanica-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oficina-mecanica-api
+  template:
+    metadata:
+      labels:
+        app: oficina-mecanica-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/konrath9/oficinamecanica-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: oficina-mecanica-api-config
+            - secretRef:
+                name: oficina-mecanica-api-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /swagger/v1/swagger.json
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /swagger/v1/swagger.json
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20

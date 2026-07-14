@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-mecanica-api-config
+  namespace: oficina-mecanica
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  Jwt__Issuer: "OficinaMecanicaAPI"
+  Jwt__Audience: "OficinaMecanicaClients"
+  Jwt__ExpiracaoHoras: "24"
+  Email__Host: "mailpit"
+  Email__Port: "1025"
+  Email__RemetenteEmail: "naoresponda@oficinamecanica.com.br"
+  Email__RemetenteNome: "Oficina Mecânica"

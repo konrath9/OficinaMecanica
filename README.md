@@ -143,15 +143,19 @@ Isso irá iniciar:
 dotnet test OficinaMecanica.Tests/OficinaMecanica.Tests.csproj --verbosity normal
 ```
 
+Roda a suíte completa sem depender de nenhum serviço externo — os testes de integração usam um banco EF Core InMemory, então não é necessário ter o PostgreSQL rodando. É o mesmo comando executado no pipeline de CI/CD antes de qualquer build de imagem ou deploy: se algum teste falhar, o pipeline para ali, antes de publicar uma imagem quebrada.
+
 ## Testes e Cobertura de Código
 
-O projeto possui testes automatizados (unitários e de integração), todos passando, organizados em:
+O projeto possui testes automatizados (unitários e de integração), todos passando, organizados em três camadas que refletem a arquitetura da aplicação:
 
 | Tipo | Descrição |
 |---|---|
 | **Unitários — Domínio** | Entidades, Value Objects (CPF/CNPJ, Placa, ItemServico, ItemPeca) |
 | **Unitários — Use Cases** | Todos os fluxos de negócio com mocks via Moq |
 | **Integração** | Endpoints via `WebApplicationFactory` + banco InMemory |
+
+Os testes de **domínio** validam regras de negócio isoladas (ex: transições de status da OS, validação de CPF/placa) sem tocar em banco de dados ou HTTP. Os de **use case** verificam a orquestração de cada operação com repositórios mockados via Moq. Os de **integração** sobem a aplicação inteira através do `WebApplicationFactory` e testam as rotas HTTP de ponta a ponta — incluindo autenticação, roteamento e serialização — garantindo que os controllers e a injeção de dependência estão de fato ligados corretamente, não só a lógica isolada.
 
 A cobertura mínima exigida pelo desafio é de **80% nos domínios críticos**, requisito atendido pelo projeto. As Migrations geradas automaticamente pelo EF Core são excluídas da medição via `coverlet.runsettings`.
 
@@ -181,6 +185,8 @@ open TestResults/Report/index.html    # macOS/Linux
 
 Pré-requisitos: [Docker](https://www.docker.com/), [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.5, [kubectl](https://kubernetes.io/docs/tasks/tools/).
 
+O deploy é dividido em duas ferramentas com responsabilidades diferentes: o **Terraform** provisiona a infraestrutura de longa duração — o cluster e o banco de dados, que não mudam a cada nova versão da aplicação — enquanto o **kubectl** aplica os manifestos da **aplicação** em si (API, HPA, configuração), que mudam a cada deploy. Essa separação evita que o Terraform precise gerenciar estado toda vez que uma nova imagem Docker é publicada.
+
 1. Provisione o cluster (kind local) e o banco de dados via Terraform — ver [`/infra`](infra/README.md) para detalhes de todos os recursos criados:
    ```bash
    cd infra
@@ -188,24 +194,33 @@ Pré-requisitos: [Docker](https://www.docker.com/), [Terraform](https://develope
    terraform apply -auto-approve
    export KUBECONFIG=$(terraform output -raw kubeconfig_path)
    ```
+   Isso cria o cluster Kubernetes, o namespace, o Postgres (StatefulSet + PVC) e o `metrics-server`. O `export KUBECONFIG` aponta o `kubectl` para esse cluster recém-criado; como o arquivo é reescrito a cada `apply`, é sempre seguro reexecutar esse comando caso o cluster seja recriado (a porta local exposta pelo `kind` muda a cada recriação).
+
 2. Aplique os manifestos da aplicação:
    ```bash
    kubectl apply -f k8s/
    kubectl rollout status deployment/oficina-mecanica-api -n oficina-mecanica
    ```
+   O `rollout status` bloqueia até os pods da API ficarem `Running` e prontos, confirmando que a imagem foi baixada e a aplicação subiu sem erros — é o mesmo comando usado no pipeline de CI/CD para validar o deploy automaticamente.
+
 3. Acesse a API:
    ```bash
    kubectl port-forward svc/oficina-mecanica-api 8080:8080 -n oficina-mecanica
    # Swagger em http://localhost:8080/swagger
    ```
+   O `Service` é do tipo `ClusterIP`, acessível apenas de dentro do cluster por design; o `port-forward` cria um túnel temporário até a porta 8080 local enquanto o comando estiver em execução.
+
 4. Para acompanhar o autoscaling (HPA):
    ```bash
    kubectl get hpa -n oficina-mecanica --watch
    ```
+   Mostra em tempo real o uso de CPU/memória dos pods comparado ao alvo configurado em [`k8s/hpa.yaml`](k8s/hpa.yaml) e quantas réplicas estão ativas — útil para confirmar que o `metrics-server` está funcionando e que o HPA reage a picos de carga (ver [`/infra`](infra/README.md) para o detalhe de como o `metrics-server` é instalado).
+
 5. Para desprovisionar tudo:
    ```bash
    cd infra && terraform destroy -auto-approve
    ```
+   Remove o cluster, o banco e todos os recursos criados pelo Terraform — recomendado ao final de cada sessão de testes locais, já que o cluster `kind` não deve ficar rodando indefinidamente na máquina.
 
 Manifestos em [`/k8s`](k8s): `configmap.yaml`, `secret.yaml`, `deployment.yaml`, `service.yaml`, `hpa.yaml`, `mailpit-deployment.yaml`, `mailpit-service.yaml`.
 

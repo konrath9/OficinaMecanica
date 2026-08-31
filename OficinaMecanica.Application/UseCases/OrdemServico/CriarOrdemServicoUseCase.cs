@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
@@ -13,6 +14,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         private readonly IClienteRepository _clienteRepository;
         private readonly IVeiculoRepository _veiculoRepository;
         private readonly IGeradorNumeroOrdemServico _numeroGenerator;
+        private readonly OrdemServicoMetrics _metrics;
         private readonly ILogger<CriarOrdemServicoUseCase> _logger;
 
         public CriarOrdemServicoUseCase(
@@ -20,12 +22,14 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             IClienteRepository clienteRepository,
             IVeiculoRepository veiculoRepository,
             IGeradorNumeroOrdemServico numeroGenerator,
+            OrdemServicoMetrics metrics,
             ILogger<CriarOrdemServicoUseCase> logger)
         {
             _ordemServicoRepository = ordemServicoRepository ?? throw new ArgumentNullException(nameof(ordemServicoRepository));
             _clienteRepository = clienteRepository ?? throw new ArgumentNullException(nameof(clienteRepository));
             _veiculoRepository = veiculoRepository ?? throw new ArgumentNullException(nameof(veiculoRepository));
             _numeroGenerator = numeroGenerator ?? throw new ArgumentNullException(nameof(numeroGenerator));
+            _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -57,6 +61,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             }
 
             var criada = await _ordemServicoRepository.AddAsync(ordemServico, cancellationToken);
+            _metrics.RegistrarOrdemCriada();
 
             _logger.LogInformation("OS criada com sucesso. Id: {Id}, Numero: {Numero}", criada.Id, criada.Numero);
 

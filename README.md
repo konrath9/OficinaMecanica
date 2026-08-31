@@ -46,6 +46,7 @@ OficinaMecanica.Tests          → Testes unitários (domínio/use cases) e inte
 ```mermaid
 flowchart TB
     C["Cliente / Postman / Swagger UI"]
+    IG["Ingress (Traefik) — API Gateway<br/>bundled no k3s de oficina-mecanica-infra-k8s"]
 
     subgraph K8s["Cluster Kubernetes — namespace oficina-mecanica"]
         SVC["Service: oficina-mecanica-api"]
@@ -56,7 +57,7 @@ flowchart TB
         SEC["Secret"]
     end
 
-    C -->|HTTP 8080| SVC --> API
+    C -->|HTTP 80| IG -->|HTTP 8080| SVC --> API
     API --> PG
     API -->|SMTP 1025| MP
     CM -.env.-> API
@@ -64,7 +65,9 @@ flowchart TB
 ```
 
 - **Terraform** (`/infra`) provisiona o **cluster** (kind local) e o **banco de dados** (Postgres via StatefulSet + PVC + Secret) e instala o `metrics-server`.
-- **Manifestos Kubernetes** (`/k8s`) definem a **aplicação**: Deployment/Service/ConfigMap/Secret/HPA da API e do Mailpit.
+- **Manifestos Kubernetes** (`/k8s`) definem a **aplicação**: Deployment/Service/ConfigMap/Secret/HPA/Ingress da API e do Mailpit.
+- **API Gateway**: `k8s/ingress.yaml` roteia o tráfego externo (`ingressClassName: traefik`) até o `Service` da API. No cluster de produção (k3s, repo [oficina-mecanica-infra-k8s](https://github.com/konrath9/oficina-mecanica-infra-k8s)) o Traefik já vem instalado por padrão e escuta na porta 80 do node. No cluster efêmero de CI (`kind`) não há Ingress controller instalado, por isso o smoke test do pipeline acessa a API via `kubectl port-forward` direto no Service — o `Ingress` fica inerte ali, sem afetar o teste.
+- Autenticação e autorização (JWT via CPF ou login administrativo, roles por endpoint) continuam sendo responsabilidade da própria API — o gateway só roteia.
 
 ### Fluxo de deploy (CI/CD)
 
@@ -81,6 +84,18 @@ flowchart LR
     I --> J["terraform destroy<br/>(cluster efêmero de CI)"]
 ```
 
+O job acima só **valida** a aplicação (build/test/manifests) num cluster `kind` descartável dentro do runner — ele não é o cluster real. Depois dele, o job `deploy-producao` faz o deploy de verdade no cluster k3s provisionado pelo repositório [oficina-mecanica-infra-k8s](https://github.com/konrath9/oficina-mecanica-infra-k8s): copia os manifestos via SSH (a API do Kubernetes, porta 6443, não é exposta à internet — só SSH), gera o `Secret` de produção (RDS real + JWT) a partir de secrets do GitHub em vez do `k8s/secret.yaml` versionado (que só tem credenciais de demonstração local), aplica os manifestos e roda um smoke test contra o Traefik (API Gateway).
+
+**Secrets necessários no repositório** (Settings → Secrets and variables → Actions):
+
+| Secret | Valor |
+|---|---|
+| `SONAR_TOKEN` | Token do SonarQube (análise estática) |
+| `K3S_HOST` | IP público (Elastic IP) do node k3s — saída `public_ip` do `terraform apply` do `oficina-mecanica-infra-k8s`. Muda se a instância for recriada (ex.: reset de sessão do AWS Academy Learner Lab) |
+| `K3S_SSH_PRIVATE_KEY` | Chave privada `k3s_ec2_key` (gerada no repositório `oficina-mecanica-infra-k8s`, nunca versionada) |
+| `PROD_DB_CONNECTION_STRING` | Connection string real do RDS (`oficina-mecanica-infra-db`), ex.: `Host=<rds_address>;Port=5432;Database=oficina_mecanica;Username=<db_username>;Password=<db_password>` |
+| `PROD_JWT_SECRET_KEY` | Mesma chave configurada como `JWT_SECRET_KEY` no repositório [oficina-mecanica-auth](https://github.com/konrath9/oficina-mecanica-auth) — precisa ser **idêntica** nos dois repositórios, senão os tokens emitidos pela Function Serverless (login via CPF) não são aceitos por esta API |
+
 ## Funcionalidades
 
 ### Ordem de Serviço (OS)
@@ -88,23 +103,33 @@ flowchart LR
 - Orçamento automático (soma de serviços + peças)
 - Fluxo de status: **Recebida → Em Diagnóstico → Aguardando Aprovação → Em Execução → Finalizada → Entregue**
 - Cancelamento com motivo
-- Consulta pública de acompanhamento por número da OS (sem autenticação)
-- Aprovação/recusa pública de orçamento (endpoint para notificações externas do cliente)
+- Consulta de acompanhamento por número da OS, autenticada com o token do próprio cliente
+- Aprovação/recusa de orçamento pelo cliente dono da OS
 - Listagem administrativa priorizada: **Em Execução > Aguardando Aprovação > Em Diagnóstico > Recebida**, mais antigas primeiro dentro do mesmo status, excluindo (lógica, não física) OS Finalizadas e Entregues
 - Notificação por e-mail ao cliente a cada mudança de status (via Mailpit em ambiente local/Kubernetes)
 - Monitoramento de tempo médio de execução
 
-### CRUDs Administrativos (autenticados via JWT)
+### CRUDs Administrativos (autenticados via JWT, restritos a staff)
 - Clientes (com validação de CPF/CNPJ)
 - Veículos (com validação de placa — formato antigo e Mercosul)
 - Serviços
 - Peças e Insumos (com controle de estoque — entrada/saída)
 
-### Segurança
-- Autenticação JWT para endpoints administrativos
-- Endpoints públicos de acompanhamento, aprovação e recusa de orçamento da OS (sem autenticação)
-- Senhas armazenadas com BCrypt
-- Validação de dados sensíveis (CPF/CNPJ, placa)
+### Segurança e autenticação (Fase 3)
+
+Existem dois emissores de token, ambos assinados com o mesmo segredo/issuer/audience (`Jwt:SecretKey/Issuer/Audience`), então um token de qualquer um dos dois é aceito por esta API:
+
+| Emissor | Quem usa | Como obtém | Roles no token |
+|---|---|---|---|
+| `POST /api/autenticacao/login` (esta API) | Staff (Administrador/Mecânico/Recepcionista) | Login com e-mail/senha | `Administrador`, `Mecanico` ou `Recepcionista` |
+| `POST /auth/login` da [Function Serverless](https://github.com/konrath9/oficina-mecanica-auth) (repo separado, Lambda) | Cliente final | Login com CPF — a function valida o CPF, confere o status do cliente no banco e emite o JWT | `Cliente` |
+
+Regras de autorização:
+- **Endpoints administrativos** (`/api/clientes`, `/api/ordens-servico`, `/api/veiculos`, `/api/servicos`, `/api/pecas`): `[Authorize(Roles = "Administrador,Mecanico,Recepcionista")]` — um token `Cliente` recebe 403.
+- **`/api/acompanhamento/*`**: aceita staff (qualquer OS) ou `Cliente` (`[Authorize]` + checagem de posse: o `sub` do token precisa ser o `ClienteId` da OS, senão 403).
+- Cliente inativo (`Ativo = false`) não consegue autenticar — a function serverless verifica o status antes de emitir o token.
+- Senhas de staff armazenadas com BCrypt.
+- Validação de dados sensíveis (CPF/CNPJ, placa).
 
 ## Como Executar
 
@@ -277,6 +302,14 @@ A especificação completa da API é publicada via Swagger/OpenAPI:
 ## Vídeo Demonstrativo
 
 [https://youtu.be/MJO8dSwz9To](https://youtu.be/MJO8dSwz9To) — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
+
+## Documentação da Arquitetura
+
+- [Diagrama de Componentes](docs/diagramas/componentes.md) — visão de nuvem, APIs, banco e monitoramento
+- [Diagrama de Sequência](docs/diagramas/sequencia-autenticacao-e-abertura-os.md) — autenticação via CPF e abertura de OS
+- [Modelo de dados](docs/modelo-dados.md) — diagrama ER e justificativa dos relacionamentos
+- RFCs: [nuvem](docs/rfc/0001-escolha-da-nuvem.md) · [banco de dados](docs/rfc/0002-escolha-do-banco-de-dados.md) · [autenticação](docs/rfc/0003-estrategia-de-autenticacao.md)
+- ADRs: [k3s vs EKS](docs/adr/0001-k3s-em-vez-de-eks.md) · [VPC compartilhada](docs/adr/0002-vpc-compartilhada-via-data-source.md) · [comunicação síncrona](docs/adr/0003-comunicacao-sincrona-via-rest.md) · [HPA](docs/adr/0004-uso-de-hpa-para-escalabilidade.md)
 
 ## Estrutura do Repositório
 

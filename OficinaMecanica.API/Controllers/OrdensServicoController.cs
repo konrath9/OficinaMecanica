@@ -6,7 +6,11 @@ using OficinaMecanica.Application.UseCases.OrdemServico;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    /// <summary>
+    /// Gestao operacional das OS. Restrito a staff (Administrador/Mecanico/Recepcionista) - o cliente
+    /// acompanha e aprova/reprova sua propria OS via AcompanhamentoController, com token de Cliente.
+    /// </summary>
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/ordens-servico")]
     public class OrdensServicoController : ControllerBase
@@ -158,7 +162,7 @@ namespace OficinaMecanica.API.Controllers
         /// <remarks>
         /// O sistema move automaticamente o status para <b>AguardandoAprovacao</b>.
         /// Requer que a OS esteja em <b>EmDiagnostico</b> e possua ao menos um servi�o ou pe�a.
-        /// O cliente poder� aprovar via: <c>POST /api/acompanhamento/{numero}/aprovar</c>
+        /// O cliente poder� aprovar via: <c>POST /api/acompanhamento/{numero}/aprovar</c> (autenticado com o token obtido via CPF)
         /// </remarks>
         [HttpPost("{id}/concluir-diagnostico")]
         public async Task<IActionResult> ConcluirDiagnostico(Guid id, CancellationToken cancellationToken)

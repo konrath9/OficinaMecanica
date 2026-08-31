@@ -2,11 +2,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using OficinaMecanica.Application.Interfaces.Services;
 using OficinaMecanica.Domain.Entities;
 using OficinaMecanica.Domain.Enums;
 using OficinaMecanica.Infrastructure.Persistence;
+using OficinaMecanica.Infrastructure.Settings;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 
 namespace OficinaMecanica.Tests.Integration
 {
@@ -32,7 +38,7 @@ namespace OficinaMecanica.Tests.Integration
             builder.UseEnvironment("Testing");
         }
 
-        /// <summary>Popula o banco em memória com dados iniciais para os testes.</summary>
+        /// <summary>Popula o banco em memï¿½ria com dados iniciais para os testes.</summary>
         public async Task SeedAsync()
         {
             using var scope = Services.CreateScope();
@@ -64,6 +70,37 @@ namespace OficinaMecanica.Tests.Integration
 
             var body = await response.Content.ReadFromJsonAsync<TokenResponse>();
             return body!.Token;
+        }
+
+        /// <summary>
+        /// Constroi um token JWT de Cliente igual ao que a Function Serverless (Fase 3, repositorio
+        /// separado) vai emitir apos validar o CPF: mesma assinatura HS256/Issuer/Audience da API,
+        /// claim de role "Cliente" e sub = clienteId. Usado nos testes pra validar a checagem de posse
+        /// do AcompanhamentoController sem precisar da Lambda de verdade.
+        /// </summary>
+        public string GerarTokenCliente(Guid clienteId, string nome = "Cliente Teste")
+        {
+            var settings = Services.GetRequiredService<IOptions<JwtSettings>>().Value;
+            var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SecretKey));
+            var credenciais = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, clienteId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, nome),
+                new Claim(ClaimTypes.Role, "Cliente"),
+                new Claim("perfil", "Cliente"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: settings.Issuer,
+                audience: settings.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credenciais);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         private sealed record TokenResponse(string Token);

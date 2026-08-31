@@ -21,7 +21,7 @@ namespace OficinaMecanica.Application.UseCases.Clientes
         {
             _logger.LogInformation("Criando cliente: {Nome}", request.Nome);
 
-            // Valida o documento antes de consultar o repositório
+            // Valida o documento antes de consultar o repositï¿½rio
             Cliente cliente;
             try
             {
@@ -42,7 +42,7 @@ namespace OficinaMecanica.Application.UseCases.Clientes
 
             var existente = await _clienteRepository.GetByDocumentoAsync(request.Documento, cancellationToken);
             if (existente is not null)
-                throw new ValidationException("Documento", "Já existe um cliente com este documento.");
+                throw new ValidationException("Documento", "Jï¿½ existe um cliente com este documento.");
 
             var criado = await _clienteRepository.AddAsync(cliente, cancellationToken);
             _logger.LogInformation("Cliente criado com Id: {Id}", criado.Id);
@@ -59,6 +59,7 @@ namespace OficinaMecanica.Application.UseCases.Clientes
             TipoDocumento = c.TipoDocumento.ToString(),
             Email = c.Email,
             Telefone = c.Telefone,
+            Ativo = c.Ativo,
             CriadoEm = c.CreatedAt,
             AtualizadoEm = c.UpdatedAt
         };

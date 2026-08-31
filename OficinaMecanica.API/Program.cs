@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using OficinaMecanica.API.Middleware;
 using OficinaMecanica.Application;
 using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Infrastructure;
@@ -8,13 +9,24 @@ using OficinaMecanica.Infrastructure.Persistence;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ?? Logs estruturados (JSON) ?????????????????????????????????????
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new CompactJsonFormatter()));
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<OficinaMecanicaDbContext>();
 
 // ?? Observabilidade (New Relic via OpenTelemetry/OTLP) ??????????????
 // So habilita se houver license key configurada - em ambientes locais/CI sem a chave,
@@ -102,6 +114,9 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging();
+
 // Swagger habilitado em todos os ambientes
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -110,6 +125,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
 

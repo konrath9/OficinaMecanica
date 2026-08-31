@@ -6,7 +6,7 @@ using OficinaMecanica.Application.UseCases.Servicos;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/servicos")]
     public class ServicosController : ControllerBase
@@ -31,7 +31,7 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Lista todos os serviços do catálogo.</summary>
+        /// <summary>Lista todos os serviï¿½os do catï¿½logo.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -43,11 +43,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar servicos");
-                return StatusCode(500, new { message = "Erro ao listar serviços" });
+                return StatusCode(500, new { message = "Erro ao listar serviï¿½os" });
             }
         }
 
-        /// <summary>Obtém um serviço pelo Id.</summary>
+        /// <summary>Obtï¿½m um serviï¿½o pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -60,11 +60,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter servico {Id}", id);
-                return StatusCode(500, new { message = "Erro ao obter serviço" });
+                return StatusCode(500, new { message = "Erro ao obter serviï¿½o" });
             }
         }
 
-        /// <summary>Cria um novo serviço no catálogo.</summary>
+        /// <summary>Cria um novo serviï¿½o no catï¿½logo.</summary>
         [HttpPost]
         public async Task<IActionResult> Criar(
             [FromBody] CriarServicoRequest request,
@@ -79,11 +79,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar servico");
-                return StatusCode(500, new { message = "Erro ao criar serviço" });
+                return StatusCode(500, new { message = "Erro ao criar serviï¿½o" });
             }
         }
 
-        /// <summary>Atualiza os dados de um serviço.</summary>
+        /// <summary>Atualiza os dados de um serviï¿½o.</summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Atualizar(
             Guid id,
@@ -101,11 +101,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar servico {Id}", id);
-                return StatusCode(500, new { message = "Erro ao atualizar serviço" });
+                return StatusCode(500, new { message = "Erro ao atualizar serviï¿½o" });
             }
         }
 
-        /// <summary>Exclui um serviço do catálogo.</summary>
+        /// <summary>Exclui um serviï¿½o do catï¿½logo.</summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Excluir(Guid id, CancellationToken cancellationToken)
         {
@@ -118,7 +118,7 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir servico {Id}", id);
-                return StatusCode(500, new { message = "Erro ao excluir serviço" });
+                return StatusCode(500, new { message = "Erro ao excluir serviï¿½o" });
             }
         }
     }

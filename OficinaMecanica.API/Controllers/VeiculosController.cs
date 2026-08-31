@@ -6,7 +6,7 @@ using OficinaMecanica.Application.UseCases.Veiculos;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/veiculos")]
     public class VeiculosController : ControllerBase
@@ -31,7 +31,7 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Lista todos os veículos.</summary>
+        /// <summary>Lista todos os veï¿½culos.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -43,11 +43,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar veiculos");
-                return StatusCode(500, new { message = "Erro ao listar veículos" });
+                return StatusCode(500, new { message = "Erro ao listar veï¿½culos" });
             }
         }
 
-        /// <summary>Obtém um veículo pelo Id.</summary>
+        /// <summary>Obtï¿½m um veï¿½culo pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -60,11 +60,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter veiculo {Id}", id);
-                return StatusCode(500, new { message = "Erro ao obter veículo" });
+                return StatusCode(500, new { message = "Erro ao obter veï¿½culo" });
             }
         }
 
-        /// <summary>Lista todos os veículos de um cliente.</summary>
+        /// <summary>Lista todos os veï¿½culos de um cliente.</summary>
         [HttpGet("por-cliente/{clienteId}")]
         public async Task<IActionResult> ListarPorCliente(Guid clienteId, CancellationToken cancellationToken)
         {
@@ -76,11 +76,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar veiculos do cliente {ClienteId}", clienteId);
-                return StatusCode(500, new { message = "Erro ao listar veículos do cliente" });
+                return StatusCode(500, new { message = "Erro ao listar veï¿½culos do cliente" });
             }
         }
 
-        /// <summary>Cria um novo veículo.</summary>
+        /// <summary>Cria um novo veï¿½culo.</summary>
         [HttpPost]
         public async Task<IActionResult> Criar(
             [FromBody] CriarVeiculoRequest request,
@@ -96,11 +96,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar veiculo");
-                return StatusCode(500, new { message = "Erro ao criar veículo" });
+                return StatusCode(500, new { message = "Erro ao criar veï¿½culo" });
             }
         }
 
-        /// <summary>Atualiza os dados de um veículo.</summary>
+        /// <summary>Atualiza os dados de um veï¿½culo.</summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Atualizar(
             Guid id,
@@ -118,11 +118,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar veiculo {Id}", id);
-                return StatusCode(500, new { message = "Erro ao atualizar veículo" });
+                return StatusCode(500, new { message = "Erro ao atualizar veï¿½culo" });
             }
         }
 
-        /// <summary>Exclui um veículo.</summary>
+        /// <summary>Exclui um veï¿½culo.</summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Excluir(Guid id, CancellationToken cancellationToken)
         {
@@ -135,7 +135,7 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir veiculo {Id}", id);
-                return StatusCode(500, new { message = "Erro ao excluir veículo" });
+                return StatusCode(500, new { message = "Erro ao excluir veï¿½culo" });
             }
         }
     }

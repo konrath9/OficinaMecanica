@@ -36,6 +36,7 @@ namespace OficinaMecanica.Application
             services.AddScoped<CriarClienteUseCase>();
             services.AddScoped<ObterClienteUseCase>();
             services.AddScoped<AtualizarClienteUseCase>();
+            services.AddScoped<AtualizarStatusClienteUseCase>();
             services.AddScoped<ExcluirClienteUseCase>();
 
             // Ve�culos

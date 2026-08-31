@@ -6,11 +6,12 @@ namespace OficinaMecanica.Application.DTOs.Clientes
     {
         public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public string Documento { get; set; } = string.Empty;    // somente dígitos
-        public string DocumentoFormatado { get; set; } = string.Empty; // com máscara
+        public string Documento { get; set; } = string.Empty;    // somente dï¿½gitos
+        public string DocumentoFormatado { get; set; } = string.Empty; // com mï¿½scara
         public string TipoDocumento { get; set; } = string.Empty; // "CPF" ou "CNPJ"
         public string? Email { get; set; }
         public string? Telefone { get; set; }
+        public bool Ativo { get; set; }
         public DateTime CriadoEm { get; set; }
         public DateTime? AtualizadoEm { get; set; }
     }

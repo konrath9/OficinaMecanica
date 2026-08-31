@@ -283,6 +283,14 @@ A especificação completa da API é publicada via Swagger/OpenAPI:
 
 [https://youtu.be/MJO8dSwz9To](https://youtu.be/MJO8dSwz9To) — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
 
+## Documentação da Arquitetura
+
+- [Diagrama de Componentes](docs/diagramas/componentes.md) — visão de nuvem, APIs, banco e monitoramento
+- [Diagrama de Sequência](docs/diagramas/sequencia-autenticacao-e-abertura-os.md) — autenticação via CPF e abertura de OS
+- [Modelo de dados](docs/modelo-dados.md) — diagrama ER e justificativa dos relacionamentos
+- RFCs: [nuvem](docs/rfc/0001-escolha-da-nuvem.md) · [banco de dados](docs/rfc/0002-escolha-do-banco-de-dados.md) · [autenticação](docs/rfc/0003-estrategia-de-autenticacao.md)
+- ADRs: [k3s vs EKS](docs/adr/0001-k3s-em-vez-de-eks.md) · [VPC compartilhada](docs/adr/0002-vpc-compartilhada-via-data-source.md) · [comunicação síncrona](docs/adr/0003-comunicacao-sincrona-via-rest.md) · [HPA](docs/adr/0004-uso-de-hpa-para-escalabilidade.md)
+
 ## Estrutura do Repositório
 
 ```

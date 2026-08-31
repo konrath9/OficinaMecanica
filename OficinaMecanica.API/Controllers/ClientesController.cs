@@ -6,7 +6,12 @@ using OficinaMecanica.Application.UseCases.Clientes;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    /// <summary>
+    /// Gestao de clientes. Restrito a staff (Administrador/Mecanico/Recepcionista) - um token de
+    /// Cliente (emitido pela Function Serverless via CPF, Fase 3) nao pode listar, alterar ou
+    /// excluir cadastros de clientes, apenas consultar/agir sobre a propria OS via AcompanhamentoController.
+    /// </summary>
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/clientes")]
     public class ClientesController : ControllerBase

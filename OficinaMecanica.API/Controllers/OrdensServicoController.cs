@@ -6,7 +6,11 @@ using OficinaMecanica.Application.UseCases.OrdemServico;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    /// <summary>
+    /// Gestao operacional das OS. Restrito a staff (Administrador/Mecanico/Recepcionista) - o cliente
+    /// acompanha e aprova/reprova sua propria OS via AcompanhamentoController, com token de Cliente.
+    /// </summary>
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/ordens-servico")]
     public class OrdensServicoController : ControllerBase

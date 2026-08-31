@@ -286,6 +286,32 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         [Fact]
+        public async Task ListarOrdensServico_ComTokenDeCliente_DeveRetornar403()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("315.746.982-07", "Cliente Sem Acesso Staff");
+
+            var tokenCliente = _factory.GerarTokenCliente(clienteId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenCliente);
+
+            var response = await _client.GetAsync("/api/ordens-servico");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ListarClientes_ComTokenDeCliente_DeveRetornar403()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("958.634.271-53", "Outro Cliente Sem Acesso Staff");
+
+            var tokenCliente = _factory.GerarTokenCliente(clienteId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenCliente);
+
+            var response = await _client.GetAsync("/api/clientes");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
         public async Task Aprovar_ComTokenAdministrativo_DeveRetornar200()
         {
             await AutenticarAsync();

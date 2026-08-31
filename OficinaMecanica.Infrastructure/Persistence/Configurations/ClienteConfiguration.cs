@@ -30,6 +30,10 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
             builder.Property(c => c.Telefone)
                 .HasMaxLength(20);
 
+            builder.Property(c => c.Ativo)
+                .IsRequired()
+                .HasDefaultValue(true);
+
             builder.Property(c => c.CreatedAt)
                 .IsRequired();
 

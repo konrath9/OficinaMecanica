@@ -1,16 +1,28 @@
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using OficinaMecanica.API.Middleware;
 using OficinaMecanica.Application;
 using OficinaMecanica.Infrastructure;
 using OficinaMecanica.Infrastructure.Persistence;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ?? Logs estruturados (JSON) ?????????????????????????????????????
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new CompactJsonFormatter()));
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<OficinaMecanicaDbContext>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -25,9 +37,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Oficina Mecânica API",
+        Title = "Oficina Mecï¿½nica API",
         Version = "v1",
-        Description = "API administrativa da Oficina Mecânica. Endpoints administrativos exigem autenticação JWT."
+        Description = "API administrativa da Oficina Mecï¿½nica. Endpoints administrativos exigem autenticaï¿½ï¿½o JWT."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -70,6 +82,9 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging();
+
 // Swagger habilitado em todos os ambientes
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -78,8 +93,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
 
-// Necessário para WebApplicationFactory nos testes de integração
+// Necessï¿½rio para WebApplicationFactory nos testes de integraï¿½ï¿½o
 public partial class Program { }

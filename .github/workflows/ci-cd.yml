@@ -133,3 +133,53 @@ jobs:
         if: always() && steps.tf_apply.conclusion != 'skipped'
         working-directory: infra
         run: terraform destroy -auto-approve
+
+  deploy-producao:
+    name: Deploy no cluster k3s de producao
+    runs-on: ubuntu-latest
+    needs: build-test-deploy
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/oficinamecanica-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configurar chave SSH do node k3s
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.K3S_SSH_PRIVATE_KEY }}" > ~/.ssh/k3s_ec2_key
+          chmod 600 ~/.ssh/k3s_ec2_key
+          ssh-keyscan -H "${{ secrets.K3S_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Apontar manifesto para a imagem publicada no GHCR
+        run: sed -i "s|${{ env.IMAGE_NAME }}:.*|${{ env.IMAGE_NAME }}:${{ github.sha }}|" k8s/deployment.yaml
+
+      - name: Gerar Secret de producao (RDS real + JWT) - k8s/secret.yaml e so o valor de demo/local
+        run: |
+          kubectl create secret generic oficina-mecanica-api-secrets \
+            --namespace oficina-mecanica \
+            --from-literal=ConnectionStrings__DefaultConnection="${{ secrets.PROD_DB_CONNECTION_STRING }}" \
+            --from-literal=Jwt__SecretKey="${{ secrets.PROD_JWT_SECRET_KEY }}" \
+            --dry-run=client -o yaml > /tmp/prod-secret.yaml
+
+      - name: Copiar manifestos (exceto o secret de demo) e o secret de producao para o node k3s
+        run: |
+          ssh -i ~/.ssh/k3s_ec2_key ubuntu@${{ secrets.K3S_HOST }} "mkdir -p /tmp/oficina-mecanica-k8s"
+          scp -i ~/.ssh/k3s_ec2_key $(ls k8s/*.yaml | grep -v '/secret\.yaml$') ubuntu@${{ secrets.K3S_HOST }}:/tmp/oficina-mecanica-k8s/
+          scp -i ~/.ssh/k3s_ec2_key /tmp/prod-secret.yaml ubuntu@${{ secrets.K3S_HOST }}:/tmp/oficina-mecanica-k8s/secret.yaml
+
+      - name: Aplicar manifestos no k3s e aguardar rollout
+        run: |
+          ssh -i ~/.ssh/k3s_ec2_key ubuntu@${{ secrets.K3S_HOST }} '
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl create namespace oficina-mecanica --dry-run=client -o yaml | kubectl apply -f -
+            kubectl apply -f /tmp/oficina-mecanica-k8s/
+            kubectl rollout status deployment/oficina-mecanica-api -n oficina-mecanica --timeout=180s
+            kubectl rollout status deployment/mailpit -n oficina-mecanica --timeout=120s
+          '
+
+      - name: Smoke test via API Gateway (Traefik)
+        run: curl -sf --retry 6 --retry-delay 10 http://${{ secrets.K3S_HOST }}/swagger/v1/swagger.json > /dev/null

@@ -43,7 +43,7 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "Cliente Integração",
+                nome = "Cliente Integraï¿½ï¿½o",
                 documento = "529.982.247-25",
                 email = "cliente@teste.com",
                 telefone = "11999999999"
@@ -57,7 +57,7 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "Cliente Inválido",
+                nome = "Cliente Invï¿½lido",
                 documento = "111.111.111-11"
             });
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -69,7 +69,7 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "Cliente Email Inválido",
+                nome = "Cliente Email Invï¿½lido",
                 documento = "529.982.247-25",
                 email = "email-sem-arroba"
             });
@@ -82,7 +82,7 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "Cliente Tel Inválido",
+                nome = "Cliente Tel Invï¿½lido",
                 documento = "529.982.247-25",
                 telefone = "123"
             });
@@ -97,7 +97,7 @@ namespace OficinaMecanica.Tests.Integration
             // POST
             var criar = await _client.PostAsJsonAsync("/api/clientes", new
             {
-                nome = "João CRUD",
+                nome = "Joï¿½o CRUD",
                 documento = "111.444.777-35",
                 email = "joao@crud.com",
                 telefone = "11988887777"
@@ -116,7 +116,7 @@ namespace OficinaMecanica.Tests.Integration
             // PUT
             var put = await _client.PutAsJsonAsync($"/api/clientes/{criado.Id}", new
             {
-                nome = "João CRUD Atualizado",
+                nome = "Joï¿½o CRUD Atualizado",
                 email = "joao.novo@crud.com"
             });
             Assert.Equal(HttpStatusCode.OK, put.StatusCode);
@@ -140,7 +140,7 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PutAsJsonAsync($"/api/clientes/{Guid.NewGuid()}", new
             {
-                nome = "Ninguém"
+                nome = "Ninguï¿½m"
             });
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
@@ -159,6 +159,47 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.GetAsync("/api/clientes/por-documento/98765432100");
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PatchStatus_DesativarClienteAtivo_DeveRetornar200EAtivoFalse()
+        {
+            await AutenticarAsync();
+            var criar = await _client.PostAsJsonAsync("/api/clientes", new
+            {
+                nome = "Cliente Status",
+                documento = "222.333.444-05"
+            });
+            var criado = await criar.Content.ReadFromJsonAsync<IdResponse>();
+
+            var response = await _client.PatchAsJsonAsync($"/api/clientes/{criado!.Id}/status", new { ativo = false });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PatchStatus_ClienteInexistente_DeveRetornar404()
+        {
+            await AutenticarAsync();
+            var response = await _client.PatchAsJsonAsync($"/api/clientes/{Guid.NewGuid()}/status", new { ativo = false });
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PatchStatus_DesativarClienteJaInativo_DeveRetornar400()
+        {
+            await AutenticarAsync();
+            var criar = await _client.PostAsJsonAsync("/api/clientes", new
+            {
+                nome = "Cliente Status Duplo",
+                documento = "333.444.555-08"
+            });
+            var criado = await criar.Content.ReadFromJsonAsync<IdResponse>();
+            await _client.PatchAsJsonAsync($"/api/clientes/{criado!.Id}/status", new { ativo = false });
+
+            var response = await _client.PatchAsJsonAsync($"/api/clientes/{criado.Id}/status", new { ativo = false });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]

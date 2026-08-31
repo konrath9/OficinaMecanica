@@ -137,12 +137,10 @@ namespace OficinaMecanica.Tests.Integration
             var concluir = await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
             Assert.Equal(HttpStatusCode.OK, concluir.StatusCode);
 
-            // Cliente aprova via endpoint publico (sem token) ? status EmExecucao (autom�tico)
+            // Fase 3: acompanhamento exige token. O token administrativo (staff) acessa qualquer OS.
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>();
-            _client.DefaultRequestHeaders.Authorization = null;
             var aprovar = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
             Assert.Equal(HttpStatusCode.OK, aprovar.StatusCode);
-            await AutenticarAsync(); // restaura o token para os proximos passos administrativos
 
             // Registrar entrega ? status Entregue (autom�tico ap�s Finalizar)
             // Primeiro finaliza manualmente (sem servi�os individuais para executar)
@@ -236,7 +234,7 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         [Fact]
-        public async Task Acompanhamento_OSExistente_SemToken_DeveRetornar200()
+        public async Task Acompanhamento_SemToken_DeveRetornar401()
         {
             await AutenticarAsync();
             var clienteId = await CriarClienteAsync("951.462.873-09", "Cliente Acompanhamento");
@@ -248,19 +246,78 @@ namespace OficinaMecanica.Tests.Integration
             });
             var os = await osResponse.Content.ReadFromJsonAsync<OsResponse>();
 
-            // Consulta sem token � endpoint publico deve retornar 200
             _client.DefaultRequestHeaders.Authorization = null;
+            var response = await _client.GetAsync($"/api/acompanhamento/{os!.Numero}");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Acompanhamento_ComTokenDoProprioCliente_DeveRetornar200()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("111.222.333-96", "Cliente Dono Da OS");
+            var veiculoId = await CriarVeiculoAsync(clienteId, "OWN-0001");
+
+            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
+            var os = await osResponse.Content.ReadFromJsonAsync<OsResponse>();
+
+            var tokenCliente = _factory.GerarTokenCliente(clienteId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenCliente);
+
             var response = await _client.GetAsync($"/api/acompanhamento/{os!.Numero}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
-        public async Task Aprovar_SemToken_DeveRetornar200()
+        public async Task Acompanhamento_ComTokenDeOutroCliente_DeveRetornar403()
         {
             await AutenticarAsync();
-            var clienteId = await CriarClienteAsync("753.951.486-80", "Cliente Aprovar Sem Token");
+            var clienteId = await CriarClienteAsync("444.555.666-19", "Cliente Dono Real");
+            var veiculoId = await CriarVeiculoAsync(clienteId, "OWN-0002");
+
+            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
+            var os = await osResponse.Content.ReadFromJsonAsync<OsResponse>();
+
+            var tokenDeOutroCliente = _factory.GerarTokenCliente(Guid.NewGuid());
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenDeOutroCliente);
+
+            var response = await _client.GetAsync($"/api/acompanhamento/{os!.Numero}");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ListarOrdensServico_ComTokenDeCliente_DeveRetornar403()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("315.746.982-07", "Cliente Sem Acesso Staff");
+
+            var tokenCliente = _factory.GerarTokenCliente(clienteId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenCliente);
+
+            var response = await _client.GetAsync("/api/ordens-servico");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ListarClientes_ComTokenDeCliente_DeveRetornar403()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("958.634.271-53", "Outro Cliente Sem Acesso Staff");
+
+            var tokenCliente = _factory.GerarTokenCliente(clienteId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenCliente);
+
+            var response = await _client.GetAsync("/api/clientes");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Aprovar_ComTokenAdministrativo_DeveRetornar200()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("753.951.486-80", "Cliente Aprovar");
             var veiculoId = await CriarVeiculoAsync(clienteId, "PUB-0002");
-            var servicoId = await CriarServicoAsync("Servico Aprovar Sem Token");
+            var servicoId = await CriarServicoAsync("Servico Aprovar");
 
             var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
@@ -269,18 +326,17 @@ namespace OficinaMecanica.Tests.Integration
             await _client.PostAsync($"/api/ordens-servico/{os.Id}/concluir-diagnostico", null);
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{os.Id}")).Content.ReadFromJsonAsync<NumeroResponse>();
 
-            _client.DefaultRequestHeaders.Authorization = null;
             var response = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
-        public async Task Reprovar_SemToken_DeveRetornar200()
+        public async Task Reprovar_ComTokenAdministrativo_DeveRetornar200()
         {
             await AutenticarAsync();
-            var clienteId = await CriarClienteAsync("428.619.375-64", "Cliente Reprovar Sem Token");
+            var clienteId = await CriarClienteAsync("428.619.375-64", "Cliente Reprovar");
             var veiculoId = await CriarVeiculoAsync(clienteId, "PUB-0003");
-            var servicoId = await CriarServicoAsync("Servico Reprovar Sem Token");
+            var servicoId = await CriarServicoAsync("Servico Reprovar");
 
             var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId });
             var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
@@ -289,7 +345,6 @@ namespace OficinaMecanica.Tests.Integration
             await _client.PostAsync($"/api/ordens-servico/{os.Id}/concluir-diagnostico", null);
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{os.Id}")).Content.ReadFromJsonAsync<NumeroResponse>();
 
-            _client.DefaultRequestHeaders.Authorization = null;
             var response = await _client.PostAsJsonAsync($"/api/acompanhamento/{osNumero!.Numero}/reprovar", new { motivo = "Valor acima do esperado" });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }

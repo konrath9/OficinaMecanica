@@ -6,7 +6,7 @@ using OficinaMecanica.Application.UseCases.Pecas;
 
 namespace OficinaMecanica.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador,Mecanico,Recepcionista")]
     [ApiController]
     [Route("api/pecas")]
     public class PecasController : ControllerBase
@@ -34,7 +34,7 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>Lista todas as peças do estoque.</summary>
+        /// <summary>Lista todas as peï¿½as do estoque.</summary>
         [HttpGet]
         public async Task<IActionResult> Listar(CancellationToken cancellationToken)
         {
@@ -46,11 +46,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar pecas");
-                return StatusCode(500, new { message = "Erro ao listar peças" });
+                return StatusCode(500, new { message = "Erro ao listar peï¿½as" });
             }
         }
 
-        /// <summary>Lista peças com estoque zerado.</summary>
+        /// <summary>Lista peï¿½as com estoque zerado.</summary>
         [HttpGet("sem-estoque")]
         public async Task<IActionResult> ListarSemEstoque(CancellationToken cancellationToken)
         {
@@ -62,11 +62,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar pecas sem estoque");
-                return StatusCode(500, new { message = "Erro ao listar peças sem estoque" });
+                return StatusCode(500, new { message = "Erro ao listar peï¿½as sem estoque" });
             }
         }
 
-        /// <summary>Obtém uma peça pelo Id.</summary>
+        /// <summary>Obtï¿½m uma peï¿½a pelo Id.</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
         {
@@ -79,11 +79,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter peca {Id}", id);
-                return StatusCode(500, new { message = "Erro ao obter peça" });
+                return StatusCode(500, new { message = "Erro ao obter peï¿½a" });
             }
         }
 
-        /// <summary>Cria uma nova peça no estoque.</summary>
+        /// <summary>Cria uma nova peï¿½a no estoque.</summary>
         [HttpPost]
         public async Task<IActionResult> Criar(
             [FromBody] CriarPecaRequest request,
@@ -98,11 +98,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar peca");
-                return StatusCode(500, new { message = "Erro ao criar peça" });
+                return StatusCode(500, new { message = "Erro ao criar peï¿½a" });
             }
         }
 
-        /// <summary>Atualiza os dados de uma peça.</summary>
+        /// <summary>Atualiza os dados de uma peï¿½a.</summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Atualizar(
             Guid id,
@@ -120,11 +120,11 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar peca {Id}", id);
-                return StatusCode(500, new { message = "Erro ao atualizar peça" });
+                return StatusCode(500, new { message = "Erro ao atualizar peï¿½a" });
             }
         }
 
-        /// <summary>Exclui uma peça do estoque.</summary>
+        /// <summary>Exclui uma peï¿½a do estoque.</summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Excluir(Guid id, CancellationToken cancellationToken)
         {
@@ -137,12 +137,12 @@ namespace OficinaMecanica.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir peca {Id}", id);
-                return StatusCode(500, new { message = "Erro ao excluir peça" });
+                return StatusCode(500, new { message = "Erro ao excluir peï¿½a" });
             }
         }
 
         /// <summary>
-        /// Movimenta o estoque de uma peça.
+        /// Movimenta o estoque de uma peï¿½a.
         /// Informe <c>tipo</c> como <b>"entrada"</b> (incrementa) ou <b>"saida"</b> (decrementa) e a <c>quantidade</c>.
         /// </summary>
         [HttpPatch("{id}/estoque")]

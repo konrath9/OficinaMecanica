@@ -35,13 +35,13 @@ spec:
               memory: "256Mi"
           readinessProbe:
             httpGet:
-              path: /swagger/v1/swagger.json
+              path: /health
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /swagger/v1/swagger.json
+              path: /health
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20

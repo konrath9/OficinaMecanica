@@ -14,11 +14,12 @@ namespace OficinaMecanica.Domain.Entities
             new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
 
         public string Nome { get; private set; }
-        public string Documento { get; private set; } // CPF ou CNPJ (somente dígitos, normalizado)
+        public string Documento { get; private set; } // CPF ou CNPJ (somente dï¿½gitos, normalizado)
         public TipoDocumento TipoDocumento => Documento.Length == 11 ? TipoDocumento.Cpf : TipoDocumento.Cnpj;
         public string DocumentoFormatado => ValueObjects.Documento.Criar(Documento).Formatado;
         public string? Email { get; private set; }
         public string? Telefone { get; private set; }
+        public bool Ativo { get; private set; }
 
         private Cliente() { }
 
@@ -28,7 +29,7 @@ namespace OficinaMecanica.Domain.Entities
             if (string.IsNullOrWhiteSpace(nome))
                 throw new ArgumentException("Nome do cliente e obrigatorio.", nameof(nome));
 
-            // Valida CPF/CNPJ via Value Object — lança ArgumentException se inválido
+            // Valida CPF/CNPJ via Value Object ï¿½ lanï¿½a ArgumentException se invï¿½lido
             var documentoValidado = ValueObjects.Documento.Criar(documento);
 
             ValidarEmail(email);
@@ -38,6 +39,25 @@ namespace OficinaMecanica.Domain.Entities
             Documento = documentoValidado.Valor;
             Email = email?.Trim().ToLowerInvariant();
             Telefone = NormalizarTelefone(telefone);
+            Ativo = true;
+        }
+
+        public void Ativar()
+        {
+            if (Ativo)
+                throw new InvalidOperationException("Cliente ja esta ativo.");
+
+            Ativo = true;
+            UpdateModificationDate();
+        }
+
+        public void Desativar()
+        {
+            if (!Ativo)
+                throw new InvalidOperationException("Cliente ja esta inativo.");
+
+            Ativo = false;
+            UpdateModificationDate();
         }
 
         public void Atualizar(string nome, string? email, string? telefone)
@@ -65,7 +85,7 @@ namespace OficinaMecanica.Domain.Entities
         {
             if (email is not null && !RegexEmail.IsMatch(email.Trim()))
                 throw new ArgumentException(
-                    $"E-mail inválido: '{email}'. Formato esperado: usuario@dominio.com", nameof(email));
+                    $"E-mail invï¿½lido: '{email}'. Formato esperado: usuario@dominio.com", nameof(email));
         }
 
         private static void ValidarTelefone(string? telefone)
@@ -74,7 +94,7 @@ namespace OficinaMecanica.Domain.Entities
             var digitos = Regex.Replace(telefone, @"\D", "", RegexOptions.None, TimeSpan.FromMilliseconds(500));
             if (digitos.Length < 10 || digitos.Length > 11)
                 throw new ArgumentException(
-                    $"Telefone inválido: '{telefone}'. Informe DDD + número (10 ou 11 dígitos).", nameof(telefone));
+                    $"Telefone invï¿½lido: '{telefone}'. Informe DDD + nï¿½mero (10 ou 11 dï¿½gitos).", nameof(telefone));
         }
 
         private static string? NormalizarTelefone(string? telefone)

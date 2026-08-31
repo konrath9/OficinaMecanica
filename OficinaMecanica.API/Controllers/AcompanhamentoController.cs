@@ -1,13 +1,20 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.UseCases.OrdemServico;
+using System.Security.Claims;
 
 namespace OficinaMecanica.API.Controllers
 {
     /// <summary>
-    /// Endpoint publico (sem autenticacao) para o cliente consultar o status da OS pelo numero
-    /// e para receber notificacoes externas de aprovacao ou recusa do orcamento.
+    /// Consulta de status e aprovacao/recusa de orcamento da OS pelo cliente.
+    /// Exige autenticacao (token emitido pela Function Serverless de login via CPF, Fase 3,
+    /// ou pelo login administrativo existente). Tokens com perfil "Cliente" so podem acessar
+    /// a propria OS - tokens de staff (Administrador/Mecanico/Recepcionista) acessam qualquer OS,
+    /// igual ao restante da API administrativa.
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/acompanhamento")]
     public class AcompanhamentoController : ControllerBase
@@ -29,6 +36,19 @@ namespace OficinaMecanica.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Tokens de Cliente so podem acessar a propria OS (sub do token == ClienteId da OS).
+        /// Tokens de staff (Administrador/Mecanico/Recepcionista) acessam qualquer OS.
+        /// </summary>
+        private bool PodeAcessar(Guid clienteIdDaOs)
+        {
+            if (!User.IsInRole("Cliente"))
+                return true;
+
+            var clienteIdDoToken = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            return Guid.TryParse(clienteIdDoToken, out var id) && id == clienteIdDaOs;
+        }
+
         /// <summary>Consulta o status de uma OS pelo n�mero.</summary>
         /// <param name="numero">N�mero da OS (ex: OS-2024-00001)</param>
         [HttpGet("{numero}")]
@@ -37,6 +57,9 @@ namespace OficinaMecanica.API.Controllers
             try
             {
                 var response = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
+                if (!PodeAcessar(response.ClienteId))
+                    return Forbid();
+
                 return Ok(response);
             }
             catch (ValidationException ex) { return BadRequest(new { errors = ex.Errors }); }
@@ -59,6 +82,9 @@ namespace OficinaMecanica.API.Controllers
             try
             {
                 var os = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
+                if (!PodeAcessar(os.ClienteId))
+                    return Forbid();
+
                 var response = await _aprovarOrcamentoUseCase.HandleAsync(os.OrdemServicoId, cancellationToken);
                 return Ok(response);
             }
@@ -87,6 +113,9 @@ namespace OficinaMecanica.API.Controllers
             try
             {
                 var os = await _acompanharUseCase.HandleAsync(numero, cancellationToken);
+                if (!PodeAcessar(os.ClienteId))
+                    return Forbid();
+
                 var motivo = string.IsNullOrWhiteSpace(body.Motivo)
                     ? "Or�amento reprovado pelo cliente"
                     : $"Or�amento reprovado pelo cliente: {body.Motivo}";

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
@@ -15,6 +16,7 @@ namespace OficinaMecanica.Tests.UseCases
         private readonly Mock<IClienteRepository> _clienteRepositoryMock = new();
         private readonly Mock<IVeiculoRepository> _veiculoRepositoryMock = new();
         private readonly Mock<IGeradorNumeroOrdemServico> _geradorNumeroMock = new();
+        private readonly OrdemServicoMetrics _metrics = new();
         private readonly Mock<ILogger<CriarOrdemServicoUseCase>> _loggerMock = new();
 
         private CriarOrdemServicoUseCase CriarUseCase() => new(
@@ -22,6 +24,7 @@ namespace OficinaMecanica.Tests.UseCases
             _clienteRepositoryMock.Object,
             _veiculoRepositoryMock.Object,
             _geradorNumeroMock.Object,
+            _metrics,
             _loggerMock.Object);
 
         private static readonly Guid ClienteId = Guid.NewGuid();
@@ -51,7 +54,7 @@ namespace OficinaMecanica.Tests.UseCases
             {
                 ClienteId = ClienteId,
                 VeiculoId = VeiculoId,
-                Observacoes = "Troca de óleo"
+                Observacoes = "Troca de ï¿½leo"
             };
 
             // Act
@@ -112,7 +115,7 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task HandleAsync_ClienteIdVazio_DeveLancarValidationException()
         {
-            // Arrange — ambos vazios para cair no caminho de acumulação de erros
+            // Arrange ï¿½ ambos vazios para cair no caminho de acumulaï¿½ï¿½o de erros
             var request = new CriarOrdemServicoRequest
             {
                 ClienteId = Guid.Empty,

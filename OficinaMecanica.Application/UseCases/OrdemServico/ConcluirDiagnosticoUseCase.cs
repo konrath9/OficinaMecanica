@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
@@ -14,17 +15,20 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         private readonly IOrdemServicoRepository _ordemServicoRepository;
         private readonly IClienteRepository _clienteRepository;
         private readonly IEmailService _emailService;
+        private readonly OrdemServicoMetrics _metrics;
         private readonly ILogger<ConcluirDiagnosticoUseCase> _logger;
 
         public ConcluirDiagnosticoUseCase(
             IOrdemServicoRepository ordemServicoRepository,
             IClienteRepository clienteRepository,
             IEmailService emailService,
+            OrdemServicoMetrics metrics,
             ILogger<ConcluirDiagnosticoUseCase> logger)
         {
             _ordemServicoRepository = ordemServicoRepository;
             _clienteRepository = clienteRepository;
             _emailService = emailService;
+            _metrics = metrics;
             _logger = logger;
         }
 
@@ -49,6 +53,11 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
             await _ordemServicoRepository.UpdateAsync(os, cancellationToken);
 
+            var duracaoDiagnostico = OrdemServicoMetricsHelper.DuracaoEntre(
+                os.HistoricoStatus, StatusOrdemServico.EmDiagnostico, StatusOrdemServico.AguardandoAprovacao);
+            if (duracaoDiagnostico.HasValue)
+                _metrics.RegistrarTempoStatus("Diagnostico", duracaoDiagnostico.Value);
+
             _logger.LogInformation("OS {OsId} movida automaticamente para AguardandoAprovacao", ordemServicoId);
 
             await NotificarClienteAsync(os, cancellationToken);
@@ -70,6 +79,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             }
             catch (Exception ex)
             {
+                _metrics.RegistrarErroIntegracao("email");
                 _logger.LogWarning(ex, "Falha ao enviar e-mail de notificacao da OS {OsId}", os.Id);
             }
         }

@@ -1,0 +1,16 @@
+terraform {
+  required_version = ">= 1.6"
+
+  required_providers {
+    newrelic = {
+      source  = "newrelic/newrelic"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "newrelic" {
+  account_id = var.newrelic_account_id
+  api_key    = var.newrelic_api_key # User API key (NRAK-...), diferente da license key usada pelo OTLP
+  region     = var.newrelic_region
+}

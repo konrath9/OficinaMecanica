@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
@@ -19,10 +20,11 @@ namespace OficinaMecanica.Tests.UseCases
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
         private readonly Mock<IClienteRepository> _clienteRepoMock = new();
         private readonly Mock<IEmailService> _emailMock = new();
+        private readonly OrdemServicoMetrics _metrics = new();
         private readonly Mock<ILogger<ConcluirDiagnosticoUseCase>> _loggerMock = new();
 
         private ConcluirDiagnosticoUseCase CriarUseCase() =>
-            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _metrics, _loggerMock.Object);
 
         private static OrdemServico OsEmDiagnosticoComServico()
         {
@@ -215,10 +217,11 @@ namespace OficinaMecanica.Tests.UseCases
         private readonly Mock<IOrdemServicoRepository> _repoMock = new();
         private readonly Mock<IClienteRepository> _clienteRepoMock = new();
         private readonly Mock<IEmailService> _emailMock = new();
+        private readonly OrdemServicoMetrics _metrics = new();
         private readonly Mock<ILogger<RegistrarEntregaUseCase>> _loggerMock = new();
 
         private RegistrarEntregaUseCase CriarUseCase() =>
-            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _loggerMock.Object);
+            new(_repoMock.Object, _clienteRepoMock.Object, _emailMock.Object, _metrics, _loggerMock.Object);
 
         private static OrdemServico OsFinalizada()
         {

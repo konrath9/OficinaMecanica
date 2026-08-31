@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.UseCases.Autenticacao;
 using OficinaMecanica.Application.UseCases.Clientes;
 using OficinaMecanica.Application.UseCases.Pecas;
@@ -12,11 +13,13 @@ namespace OficinaMecanica.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            // Autenticação
+            services.AddSingleton<OrdemServicoMetrics>();
+
+            // Autenticaï¿½ï¿½o
             services.AddScoped<LoginUseCase>();
             services.AddScoped<RegistrarUsuarioUseCase>();
 
-            // Ordens de Serviço
+            // Ordens de Serviï¿½o
             services.AddScoped<CriarOrdemServicoUseCase>();
             services.AddScoped<ObterOrdemServicoUseCase>();
             services.AddScoped<AdicionarServicoOrdemServicoUseCase>();
@@ -35,19 +38,19 @@ namespace OficinaMecanica.Application
             services.AddScoped<AtualizarClienteUseCase>();
             services.AddScoped<ExcluirClienteUseCase>();
 
-            // Veículos
+            // Veï¿½culos
             services.AddScoped<CriarVeiculoUseCase>();
             services.AddScoped<ObterVeiculoUseCase>();
             services.AddScoped<AtualizarVeiculoUseCase>();
             services.AddScoped<ExcluirVeiculoUseCase>();
 
-            // Serviços
+            // Serviï¿½os
             services.AddScoped<CriarServicoUseCase>();
             services.AddScoped<ObterServicoUseCase>();
             services.AddScoped<AtualizarServicoUseCase>();
             services.AddScoped<ExcluirServicoUseCase>();
 
-            // Peças
+            // Peï¿½as
             services.AddScoped<CriarPecaUseCase>();
             services.AddScoped<ObterPecaUseCase>();
             services.AddScoped<AtualizarPecaUseCase>();

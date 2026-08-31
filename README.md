@@ -248,6 +248,26 @@ Isso valida de ponta a ponta, a cada push, que a aplicação builda, passa nos t
 
 Há também o workflow [`.github/workflows/build.yml`](.github/workflows/build.yml), com a análise de qualidade/cobertura via SonarQube.
 
+## Observabilidade
+
+Ferramenta escolhida: **New Relic** (free tier — 100GB/mês, aceita ingestão via OpenTelemetry/OTLP direto, sem precisar de um agente rodando no cluster).
+
+- **Traces**: `AspNetCoreInstrumentation` + `HttpClientInstrumentation` do OpenTelemetry, exportados via OTLP — cobre latência de cada rota da API.
+- **Métricas de runtime**: GC, thread pool, memória do processo (`RuntimeInstrumentation`).
+- **Métricas de negócio** (`OficinaMecanica.Application.Common.Metrics.OrdemServicoMetrics`), expostas via `System.Diagnostics.Metrics` (API neutra de fornecedor):
+  - `ordens_servico.criadas` — contador, alimenta o dashboard de volume diário;
+  - `ordens_servico.tempo_por_status_segundos` — histograma, com atributo `status` (`Diagnostico`/`Execucao`/`Finalizacao`), calculado a partir do histórico de transições da própria OS;
+  - `integracoes.erros` — contador, com atributo `integracao` (ex.: `email`), incrementado quando a notificação por e-mail ao cliente falha.
+- **Healthcheck/uptime**: `/health` (já usado pelas probes do Kubernetes).
+- **Logs estruturados (JSON) com correlação entre requisições**: Serilog + middleware de correlation id (`X-Correlation-Id` gerado ou ecoado por requisição, propagado para todo log daquela requisição).
+
+A instrumentação só é ativada com uma **License Key** do New Relic configurada
+(`NewRelic__LicenseKey`) — sem ela (caso do CI de validação e do ambiente local por padrão), a
+aplicação roda normalmente sem tentar exportar nada. Em produção, essa chave entra no Secret
+gerado pelo job `deploy-producao` do CI/CD, igual a `PROD_DB_CONNECTION_STRING`.
+
+Dashboard e alerta são provisionados como código em [`observability/newrelic`](observability/newrelic/README.md) (Terraform, provider `newrelic/newrelic`) — cobre os 3 painéis exigidos (volume diário de OS, tempo médio de execução por status, erros de integração) mais latência das APIs, e um alerta por e-mail para falhas de integração acima do limite.
+
 ## Collection da API
 
 A especificação completa da API é publicada via Swagger/OpenAPI:

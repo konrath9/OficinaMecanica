@@ -2,8 +2,12 @@ using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OficinaMecanica.Application;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Infrastructure;
 using OficinaMecanica.Infrastructure.Persistence;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -11,6 +15,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+
+// ?? Observabilidade (New Relic via OpenTelemetry/OTLP) ??????????????
+// So habilita se houver license key configurada - em ambientes locais/CI sem a chave,
+// a aplicacao roda normalmente sem tentar exportar nada.
+var newRelicLicenseKey = builder.Configuration["NewRelic:LicenseKey"];
+if (!string.IsNullOrWhiteSpace(newRelicLicenseKey))
+{
+    var otlpEndpoint = builder.Configuration["NewRelic:OtlpEndpoint"] ?? "https://otlp.nr-data.net:4317";
+
+    void ConfigurarOtlp(OpenTelemetry.Exporter.OtlpExporterOptions otlp)
+    {
+        otlp.Endpoint = new Uri(otlpEndpoint);
+        otlp.Headers = $"api-key={newRelicLicenseKey}";
+    }
+
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("oficina-mecanica-api"))
+        .WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter(ConfigurarOtlp))
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddMeter(OrdemServicoMetrics.MeterName)
+            .AddOtlpExporter(ConfigurarOtlp));
+}
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -25,9 +57,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Oficina Mecânica API",
+        Title = "Oficina Mecï¿½nica API",
         Version = "v1",
-        Description = "API administrativa da Oficina Mecânica. Endpoints administrativos exigem autenticação JWT."
+        Description = "API administrativa da Oficina Mecï¿½nica. Endpoints administrativos exigem autenticaï¿½ï¿½o JWT."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -81,5 +113,5 @@ app.MapControllers();
 
 app.Run();
 
-// Necessário para WebApplicationFactory nos testes de integração
+// Necessï¿½rio para WebApplicationFactory nos testes de integraï¿½ï¿½o
 public partial class Program { }

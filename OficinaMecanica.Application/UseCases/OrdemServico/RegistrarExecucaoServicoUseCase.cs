@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using OficinaMecanica.Application.Common.Exceptions;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
+using OficinaMecanica.Domain.Enums;
 
 namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
@@ -22,17 +24,20 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         private readonly IOrdemServicoRepository _ordemServicoRepository;
         private readonly IClienteRepository _clienteRepository;
         private readonly IEmailService _emailService;
+        private readonly OrdemServicoMetrics _metrics;
         private readonly ILogger<RegistrarExecucaoServicoUseCase> _logger;
 
         public RegistrarExecucaoServicoUseCase(
             IOrdemServicoRepository ordemServicoRepository,
             IClienteRepository clienteRepository,
             IEmailService emailService,
+            OrdemServicoMetrics metrics,
             ILogger<RegistrarExecucaoServicoUseCase> logger)
         {
             _ordemServicoRepository = ordemServicoRepository;
             _clienteRepository = clienteRepository;
             _emailService = emailService;
+            _metrics = metrics;
             _logger = logger;
         }
 
@@ -79,6 +84,12 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                         os.Finalizar();
                         osFinalizadaAutomaticamente = true;
                         await _ordemServicoRepository.UpdateAsync(os, cancellationToken);
+
+                        var duracaoExecucao = OrdemServicoMetricsHelper.DuracaoEntre(
+                            os.HistoricoStatus, StatusOrdemServico.EmExecucao, StatusOrdemServico.Finalizada);
+                        if (duracaoExecucao.HasValue)
+                            _metrics.RegistrarTempoStatus("Execucao", duracaoExecucao.Value);
+
                         _logger.LogInformation("OS {OsId} finalizada automaticamente pois todos os servicos foram concluidos", os.Id);
                     }
                     catch (InvalidOperationException)
@@ -117,6 +128,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             }
             catch (Exception ex)
             {
+                _metrics.RegistrarErroIntegracao("email");
                 _logger.LogWarning(ex, "Falha ao enviar e-mail de notificacao da OS {OsId}", os.Id);
             }
         }

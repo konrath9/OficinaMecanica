@@ -6,8 +6,9 @@ using OficinaMecanica.Application.Interfaces.Repositories;
 namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
     /// <summary>
-    /// Endpoint público: qualquer pessoa pode acompanhar o status da OS pelo número, sem autenticação.
-    /// Retorna apenas dados não sensíveis.
+    /// Consulta a OS pelo numero. A partir da Fase 3, o controller exige autenticacao via CPF
+    /// (Function Serverless) e restringe o acesso ao proprio cliente dono da OS - a checagem de
+    /// posse fica no controller, que ja recebe o ClienteId aqui no response pra comparar com o token.
     /// </summary>
     public class AcompanharOrdemServicoUseCase
     {
@@ -28,9 +29,9 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         public async Task<AcompanhamentoOrdemServicoResponse> HandleAsync(string numero, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(numero))
-                throw new ValidationException("Numero", "Número da OS é obrigatório.");
+                throw new ValidationException("Numero", "Nï¿½mero da OS ï¿½ obrigatï¿½rio.");
 
-            _logger.LogInformation("Acompanhamento público da OS: {Numero}", numero);
+            _logger.LogInformation("Acompanhamento pï¿½blico da OS: {Numero}", numero);
 
             var os = await _ordemServicoRepository.GetByNumeroAsync(numero, cancellationToken);
             if (os is null)
@@ -44,6 +45,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             return new AcompanhamentoOrdemServicoResponse
             {
                 OrdemServicoId = os.Id,
+                ClienteId = os.ClienteId,
                 Numero = os.Numero,
                 Status = os.Status,
                 StatusDescricao = os.Status.ToString(),
@@ -74,12 +76,12 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
 
         private static string ObterMensagemStatus(Domain.Enums.StatusOrdemServico status) => status switch
         {
-            Domain.Enums.StatusOrdemServico.Recebida => "Sua OS foi recebida e está na fila de atendimento.",
-            Domain.Enums.StatusOrdemServico.EmDiagnostico => "O técnico está realizando o diagnóstico do veículo.",
-            Domain.Enums.StatusOrdemServico.AguardandoAprovacao => "O orçamento foi enviado. Aguardando sua aprovação para iniciar os serviços.",
-            Domain.Enums.StatusOrdemServico.EmExecucao => "Os serviços estão sendo executados.",
-            Domain.Enums.StatusOrdemServico.Finalizada => "Todos os serviços foram concluídos. Seu veículo está pronto para retirada.",
-            Domain.Enums.StatusOrdemServico.Entregue => "Veículo entregue. Obrigado pela preferência!",
+            Domain.Enums.StatusOrdemServico.Recebida => "Sua OS foi recebida e estï¿½ na fila de atendimento.",
+            Domain.Enums.StatusOrdemServico.EmDiagnostico => "O tï¿½cnico estï¿½ realizando o diagnï¿½stico do veï¿½culo.",
+            Domain.Enums.StatusOrdemServico.AguardandoAprovacao => "O orï¿½amento foi enviado. Aguardando sua aprovaï¿½ï¿½o para iniciar os serviï¿½os.",
+            Domain.Enums.StatusOrdemServico.EmExecucao => "Os serviï¿½os estï¿½o sendo executados.",
+            Domain.Enums.StatusOrdemServico.Finalizada => "Todos os serviï¿½os foram concluï¿½dos. Seu veï¿½culo estï¿½ pronto para retirada.",
+            Domain.Enums.StatusOrdemServico.Entregue => "Veï¿½culo entregue. Obrigado pela preferï¿½ncia!",
             Domain.Enums.StatusOrdemServico.Cancelada => "Esta OS foi cancelada.",
             _ => string.Empty
         };

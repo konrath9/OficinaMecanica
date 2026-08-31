@@ -4,11 +4,12 @@ using OficinaMecanica.Domain.Enums;
 namespace OficinaMecanica.Application.DTOs.OrdemServico
 {
     /// <summary>
-    /// Resposta pública para acompanhamento da OS pelo cliente (sem dados sensíveis)
+    /// Resposta pï¿½blica para acompanhamento da OS pelo cliente (sem dados sensï¿½veis)
     /// </summary>
     public class AcompanhamentoOrdemServicoResponse
     {
         public Guid OrdemServicoId { get; set; }
+        public Guid ClienteId { get; set; }
         public string Numero { get; set; } = string.Empty;
         public StatusOrdemServico Status { get; set; }
         public string StatusDescricao { get; set; } = string.Empty;

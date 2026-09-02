@@ -262,15 +262,22 @@ Veja [`infra/README.md`](infra/README.md) para a lista completa de recursos e in
 
 ## CI/CD
 
-Pipeline em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), disparado em push para `master`, executa:
+Pipeline em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), disparado em push para `master`, com dois estágios — **homologação** e **produção**:
+
+### 1. Homologação (`build-test-deploy`)
 1. Build e testes automatizados (`dotnet test`);
 2. Build da imagem Docker e push para o GitHub Container Registry (GHCR);
-3. `terraform apply` — cria um cluster kind efêmero, o banco de dados e o `metrics-server` dentro do próprio runner do GitHub Actions;
+3. `terraform apply` — cria um cluster **kind efêmero** (ambiente de homologação, descartável, dentro do próprio runner do GitHub Actions), o banco de dados e o `metrics-server`;
 4. Carrega a imagem no cluster e aplica os manifestos de `/k8s` (`kubectl apply`);
 5. Aguarda o rollout dos Deployments e executa um smoke test contra o Swagger;
-6. `terraform destroy` — desprovisiona o cluster efêmero ao final.
+6. `terraform destroy` — desprovisiona o ambiente de homologação ao final.
 
-Isso valida de ponta a ponta, a cada push, que a aplicação builda, passa nos testes, sobe no Kubernetes e fica pronta para receber tráfego.
+Isso valida de ponta a ponta, a cada push, que a aplicação builda, passa nos testes, sobe no Kubernetes e fica pronta para receber tráfego — **antes** de qualquer coisa chegar em produção.
+
+### 2. Produção (`deploy-producao`)
+Só roda se a homologação (passo acima) passar. Faz o deploy de verdade no cluster k3s (ver seção ["Fluxo de deploy (CI/CD)"](#fluxo-de-deploy-cicd) acima).
+
+> Não há um ambiente de homologação persistente separado (um segundo cluster/banco) por restrição de orçamento do AWS Academy Learner Lab (cada recurso gerenciado cobra por hora, mesmo ocioso — ver [RFC 0001](docs/rfc/0001-escolha-da-nuvem.md)). O cluster `kind` efêmero cumpre o papel de homologação: valida a aplicação de ponta a ponta a cada push, sem custo, antes do deploy real.
 
 Há também o workflow [`.github/workflows/build.yml`](.github/workflows/build.yml), com a análise de qualidade/cobertura via SonarQube.
 

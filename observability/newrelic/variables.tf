@@ -19,3 +19,8 @@ variable "notification_email" {
   description = "E-mail que recebe os alertas de falha no processamento de OS"
   type        = string
 }
+
+variable "app_host" {
+  description = "Host publico da aplicacao (IP do k3s, mesmo valor do secret K3S_HOST do repositorio principal) - usado pelo monitor de uptime/healthcheck"
+  type        = string
+}

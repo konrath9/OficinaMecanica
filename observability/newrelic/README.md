@@ -15,8 +15,10 @@ seção "Observabilidade" do README principal.
 ## O que este Terraform cria
 
 - `newrelic_one_dashboard` — 1 dashboard com 4 widgets: volume diário de OS, tempo médio de execução por status (Diagnóstico/Execução/Finalização), erros de integração, e latência das APIs (p50/p95 por rota).
-- `newrelic_alert_policy` + `newrelic_nrql_alert_condition` — alerta quando falhas de integração (ex.: envio de e-mail durante o processamento de uma OS) excedem o limite em 5 minutos.
-- `newrelic_notification_destination`/`newrelic_notification_channel`/`newrelic_workflow` — envia o alerta por e-mail.
+- `newrelic_synthetics_monitor` — healthcheck/uptime: pinga `http://<app_host>/health` a cada 5 minutos.
+- Duas alert policies (`newrelic_alert_policy` + `newrelic_nrql_alert_condition`), cada uma com seu próprio e-mail via `newrelic_notification_destination`/`newrelic_notification_channel`/`newrelic_workflow`:
+  - **Falhas no processamento de OS**: erros de integração (ex.: envio de e-mail) acima do limite em 5 minutos, e erros HTTP 5xx nas rotas `/api/ordens-servico` e `/api/acompanhamento`.
+  - **Uptime**: o monitor de Synthetics reporta falha no `/health`.
 
 ## Como rodar
 
@@ -26,7 +28,8 @@ terraform init
 terraform apply \
   -var="newrelic_account_id=<seu account id>" \
   -var="newrelic_api_key=<seu User API Key>" \
-  -var="notification_email=<seu e-mail>"
+  -var="notification_email=<seu e-mail>" \
+  -var="app_host=<mesmo valor do secret K3S_HOST do repositorio principal>"
 ```
 
 ## Ligando a aplicação ao New Relic

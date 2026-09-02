@@ -95,6 +95,7 @@ O job acima só **valida** a aplicação (build/test/manifests) num cluster `kin
 | `K3S_SSH_PRIVATE_KEY` | Chave privada `k3s_ec2_key` (gerada no repositório `oficina-mecanica-infra-k8s`, nunca versionada) |
 | `PROD_DB_CONNECTION_STRING` | Connection string real do RDS (`oficina-mecanica-infra-db`), ex.: `Host=<rds_address>;Port=5432;Database=oficina_mecanica;Username=<db_username>;Password=<db_password>` |
 | `PROD_JWT_SECRET_KEY` | Mesma chave configurada como `JWT_SECRET_KEY` no repositório [oficina-mecanica-auth](https://github.com/konrath9/oficina-mecanica-auth) — precisa ser **idêntica** nos dois repositórios, senão os tokens emitidos pela Function Serverless (login via CPF) não são aceitos por esta API |
+| `NEW_RELIC_LICENSE_KEY` | License Key do New Relic (opcional — sem ela a aplicação roda normalmente, só não envia telemetria). Ver [`observability/newrelic`](observability/newrelic/README.md) |
 
 ## Funcionalidades
 
@@ -291,7 +292,7 @@ A instrumentação só é ativada com uma **License Key** do New Relic configura
 aplicação roda normalmente sem tentar exportar nada. Em produção, essa chave entra no Secret
 gerado pelo job `deploy-producao` do CI/CD, igual a `PROD_DB_CONNECTION_STRING`.
 
-Dashboard e alerta são provisionados como código em [`observability/newrelic`](observability/newrelic/README.md) (Terraform, provider `newrelic/newrelic`) — cobre os 3 painéis exigidos (volume diário de OS, tempo médio de execução por status, erros de integração) mais latência das APIs, e um alerta por e-mail para falhas de integração acima do limite.
+Dashboard, monitor de uptime e alertas são provisionados como código em [`observability/newrelic`](observability/newrelic/README.md) (Terraform, provider `newrelic/newrelic`): dashboard com os 3 painéis exigidos (volume diário de OS, tempo médio de execução por status, erros de integração) mais latência das APIs; monitor de Synthetics pingando `/health` a cada 5 min; e alertas por e-mail para falhas de integração, erros HTTP 5xx nas rotas de OS/acompanhamento, e healthcheck fora do ar.
 
 ## Collection da API
 

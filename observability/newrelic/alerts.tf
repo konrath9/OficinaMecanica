@@ -29,6 +29,25 @@ resource "newrelic_nrql_alert_condition" "erros_integracao" {
   }
 }
 
+resource "newrelic_nrql_alert_condition" "erros_5xx_ordens_servico" {
+  policy_id                    = newrelic_alert_policy.processamento_os.id
+  name                         = "Erros HTTP 5xx nas rotas de Ordens de Servico"
+  description                  = "Dispara quando requisicoes a /api/ordens-servico ou /api/acompanhamento retornam erro de servidor (5xx)."
+  enabled                      = true
+  violation_time_limit_seconds = 3600
+
+  nrql {
+    query = "SELECT count(*) FROM Metric WHERE metricName = 'http.server.request.duration' AND (http.route LIKE '%ordens-servico%' OR http.route LIKE '%acompanhamento%') AND numeric(http.response.status_code) >= 500"
+  }
+
+  critical {
+    operator              = "above"
+    threshold             = 3
+    threshold_duration    = 300
+    threshold_occurrences = "at_least_once"
+  }
+}
+
 resource "newrelic_notification_destination" "email" {
   name = "oficina-mecanica-email"
   type = "EMAIL"

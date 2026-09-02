@@ -163,6 +163,7 @@ jobs:
             --namespace oficina-mecanica \
             --from-literal=ConnectionStrings__DefaultConnection="${{ secrets.PROD_DB_CONNECTION_STRING }}" \
             --from-literal=Jwt__SecretKey="${{ secrets.PROD_JWT_SECRET_KEY }}" \
+            --from-literal=NewRelic__LicenseKey="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --dry-run=client -o yaml > /tmp/prod-secret.yaml
 
       - name: Copiar manifestos (exceto o secret de demo) e o secret de producao para o node k3s

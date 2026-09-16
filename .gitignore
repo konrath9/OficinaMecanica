@@ -367,6 +367,9 @@ FodyWeavers.xsd
 *.tfstate
 *.tfstate.*
 *.tfplan
+# tfvars guarda credencial em texto plano (ex.: a User API Key do New Relic)
+*.tfvars
+*.tfvars.json
 crash.log
 crash.*.log
 override.tf

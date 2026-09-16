@@ -1,0 +1,11 @@
+# Copie para terraform.tfvars e preencha. O terraform.tfvars e ignorado pelo git
+# porque guarda a User API Key em texto plano.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#   terraform apply
+#
+# Onde achar cada valor: one.newrelic.com > seu nome > API keys
+newrelic_account_id = "<account id, so numeros>"
+newrelic_api_key    = "<User API Key - tipo User, NAO a License Key>"
+notification_email  = "<voce@exemplo.com>"
+app_host            = "<IP do k3s, mesmo valor do secret K3S_HOST>"

@@ -6,6 +6,7 @@ using OficinaMecanica.Application;
 using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Infrastructure;
 using OficinaMecanica.Infrastructure.Persistence;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -17,10 +18,13 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // ?? Logs estruturados (JSON) ?????????????????????????????????????
+// writeToProviders: o Serilog escreve no console E nos providers do MEL, para que o
+// exportador OTLP de logs (configurado abaixo) tambem receba as mesmas mensagens.
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console(new CompactJsonFormatter()));
+    .WriteTo.Console(new CompactJsonFormatter()),
+    writeToProviders: true);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
@@ -41,6 +45,15 @@ if (!string.IsNullOrWhiteSpace(newRelicLicenseKey))
         otlp.Endpoint = new Uri(otlpEndpoint);
         otlp.Headers = $"api-key={newRelicLicenseKey}";
     }
+
+    // Logs: sem isto, o New Relic recebe traces e metricas mas nenhum log.
+    builder.Logging.AddOpenTelemetry(logging =>
+    {
+        logging.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("oficina-mecanica-api"));
+        logging.IncludeScopes = true;
+        logging.IncludeFormattedMessage = true;
+        logging.AddOtlpExporter(ConfigurarOtlp);
+    });
 
     builder.Services.AddOpenTelemetry()
         .ConfigureResource(resource => resource.AddService("oficina-mecanica-api"))

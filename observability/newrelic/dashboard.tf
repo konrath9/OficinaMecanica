@@ -13,7 +13,9 @@ resource "newrelic_one_dashboard" "oficina_mecanica" {
 
       nrql_query {
         account_id = var.newrelic_account_id
-        query      = "SELECT count(*) FROM Metric WHERE metricName = 'ordens_servico.criadas' FACET dateOf(timestamp) SINCE 30 days ago"
+        # sum() do contador, nao count(*): count(*) contaria os pontos de exportacao
+        # (um a cada 60s), nao as OS criadas.
+        query = "SELECT sum(ordens_servico.criadas) FROM Metric FACET dateOf(timestamp) SINCE 30 days ago"
       }
     }
 
@@ -39,7 +41,7 @@ resource "newrelic_one_dashboard" "oficina_mecanica" {
 
       nrql_query {
         account_id = var.newrelic_account_id
-        query      = "SELECT count(*) FROM Metric WHERE metricName = 'integracoes.erros' FACET integracao SINCE 30 days ago"
+        query      = "SELECT sum(integracoes.erros) FROM Metric FACET integracao SINCE 30 days ago"
       }
     }
 
@@ -52,7 +54,8 @@ resource "newrelic_one_dashboard" "oficina_mecanica" {
 
       nrql_query {
         account_id = var.newrelic_account_id
-        query      = "SELECT percentile(http.server.request.duration, 50, 95) FROM Metric WHERE metricName = 'http.server.request.duration' FACET http.route TIMESERIES SINCE 7 days ago"
+        # Atributo com ponto no nome precisa de crase no FACET, senao o NRQL nao resolve.
+        query = "SELECT percentile(http.server.request.duration, 50, 95) FROM Metric FACET `http.route` TIMESERIES SINCE 7 days ago"
       }
     }
   }

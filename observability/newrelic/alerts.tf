@@ -37,7 +37,7 @@ resource "newrelic_nrql_alert_condition" "erros_5xx_ordens_servico" {
   violation_time_limit_seconds = 3600
 
   nrql {
-    query = "SELECT count(*) FROM Metric WHERE metricName = 'http.server.request.duration' AND (http.route LIKE '%ordens-servico%' OR http.route LIKE '%acompanhamento%') AND numeric(http.response.status_code) >= 500"
+    query = "SELECT count(*) FROM Metric WHERE metricName = 'http.server.request.duration' AND (`http.route` LIKE '%ordens-servico%' OR `http.route` LIKE '%acompanhamento%') AND numeric(`http.response.status_code`) >= 500"
   }
 
   critical {

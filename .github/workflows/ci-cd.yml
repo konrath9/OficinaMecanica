@@ -48,7 +48,7 @@ jobs:
         run: >
           dotnet test OficinaMecanica.Tests --no-build -c Release --verbosity normal
           -p:CollectCoverage=true -p:CoverletOutputFormat=opencover
-          -p:Threshold=80 -p:ThresholdType=line
+          -p:Threshold=80 -p:ThresholdType=line -p:ThresholdStat=Total
           "-p:ExcludeByFile=**/Migrations/*.cs"
           -p:CoverletOutput=../TestResults/coverage/
 

@@ -52,7 +52,7 @@ namespace OficinaMecanica.Tests.Integration
             var response = await _client.PostAsJsonAsync("/api/pecas", new
             {
                 codigo = "OL-INT-001",
-                nome = "Óleo 5W30 Integração",
+                nome = "Ã“leo 5W30 IntegraÃ§Ã£o",
                 precoUnitario = 45.90,
                 quantidadeEstoque = 20
             });
@@ -67,7 +67,7 @@ namespace OficinaMecanica.Tests.Integration
             await _client.PostAsJsonAsync("/api/pecas", new
             {
                 codigo = "OL-DUP-001",
-                nome = "Óleo Duplicado",
+                nome = "Ã“leo Duplicado",
                 precoUnitario = 45.90,
                 quantidadeEstoque = 10
             });
@@ -75,7 +75,7 @@ namespace OficinaMecanica.Tests.Integration
             var response = await _client.PostAsJsonAsync("/api/pecas", new
             {
                 codigo = "OL-DUP-001",
-                nome = "Óleo Duplicado 2",
+                nome = "Ã“leo Duplicado 2",
                 precoUnitario = 50.00,
                 quantidadeEstoque = 5
             });
@@ -144,7 +144,7 @@ namespace OficinaMecanica.Tests.Integration
             var criarResponse = await _client.PostAsJsonAsync("/api/pecas", new
             {
                 codigo = "OL-ERR-001",
-                nome = "Óleo Erro",
+                nome = "Ã“leo Erro",
                 precoUnitario = 45.00,
                 quantidadeEstoque = 5
             });
@@ -208,8 +208,8 @@ namespace OficinaMecanica.Tests.Integration
             await AutenticarAsync();
             var response = await _client.PostAsJsonAsync("/api/servicos", new
             {
-                nome = "Troca de Óleo Integração",
-                descricao = "Troca completa de óleo do motor",
+                nome = "Troca de Ã“leo IntegraÃ§Ã£o",
+                descricao = "Troca completa de Ã³leo do motor",
                 preco = 150.00
             });
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -285,14 +285,14 @@ namespace OficinaMecanica.Tests.Integration
 
             await _client.PostAsJsonAsync("/api/servicos", new
             {
-                nome = "Serviço A para PUT",
+                nome = "ServiÃ§o A para PUT",
                 descricao = "Desc",
                 preco = 100.00
             });
 
             var criarB = await _client.PostAsJsonAsync("/api/servicos", new
             {
-                nome = "Serviço B para PUT",
+                nome = "ServiÃ§o B para PUT",
                 descricao = "Desc",
                 preco = 100.00
             });
@@ -300,7 +300,7 @@ namespace OficinaMecanica.Tests.Integration
 
             var putResponse = await _client.PutAsJsonAsync($"/api/servicos/{b!.Id}", new
             {
-                nome = "Serviço A para PUT",
+                nome = "ServiÃ§o A para PUT",
                 descricao = "Desc",
                 preco = 100.00
             });

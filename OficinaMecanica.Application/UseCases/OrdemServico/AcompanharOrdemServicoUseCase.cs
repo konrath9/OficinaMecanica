@@ -57,11 +57,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
                 IniciadaEm = os.IniciadaEm,
                 FinalizadaEm = os.FinalizadaEm,
                 EntregueEm = os.EntregueEm,
-                Progresso = new ProgressoServicosResponse
-                {
-                    Concluidos = os.ProgressoServicos.Concluidos,
-                    Total = os.ProgressoServicos.Total
-                },
+                LinkPagamento = os.LinkPagamento,
                 Historico = os.HistoricoStatus
                     .OrderBy(h => h.OcorridoEm)
                     .Select(h => new HistoricoStatusResponse
@@ -79,6 +75,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             Domain.Enums.StatusOrdemServico.Recebida => "Sua OS foi recebida e est� na fila de atendimento.",
             Domain.Enums.StatusOrdemServico.EmDiagnostico => "O t�cnico est� realizando o diagn�stico do ve�culo.",
             Domain.Enums.StatusOrdemServico.AguardandoAprovacao => "O or�amento foi enviado. Aguardando sua aprova��o para iniciar os servi�os.",
+            Domain.Enums.StatusOrdemServico.AguardandoPagamento => "Orçamento aprovado. Aguardando a confirmação do pagamento para iniciar os serviços.",
             Domain.Enums.StatusOrdemServico.EmExecucao => "Os servi�os est�o sendo executados.",
             Domain.Enums.StatusOrdemServico.Finalizada => "Todos os servi�os foram conclu�dos. Seu ve�culo est� pronto para retirada.",
             Domain.Enums.StatusOrdemServico.Entregue => "Ve�culo entregue. Obrigado pela prefer�ncia!",

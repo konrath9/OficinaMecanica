@@ -60,6 +60,7 @@ if (!string.IsNullOrWhiteSpace(newRelicLicenseKey))
         .WithTracing(tracing => tracing
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
+            .AddSource("MassTransit") // trace distribuido OS -> Billing -> Execution via RabbitMQ
             .AddOtlpExporter(ConfigurarOtlp))
         .WithMetrics(metrics => metrics
             .AddAspNetCoreInstrumentation()

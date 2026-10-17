@@ -13,6 +13,7 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
         {
             [StatusOrdemServico.EmExecucao] = 1,
             [StatusOrdemServico.AguardandoAprovacao] = 2,
+            [StatusOrdemServico.AguardandoPagamento] = 2,
             [StatusOrdemServico.EmDiagnostico] = 3,
             [StatusOrdemServico.Recebida] = 4,
         };

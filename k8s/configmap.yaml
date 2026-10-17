@@ -12,3 +12,5 @@ data:
   Email__Port: "1025"
   Email__RemetenteEmail: "naoresponda@oficinamecanica.com.br"
   Email__RemetenteNome: "Oficina Mecânica"
+  RabbitMq__Host: "rabbitmq"
+  RabbitMq__Username: "oficina"

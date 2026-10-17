@@ -15,7 +15,7 @@ namespace OficinaMecanica.Tests.UseCases
 
         private ObterClienteUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
-        private static Cliente ClienteValido() => new("Jo„o Silva", "529.982.247-25", "joao@email.com");
+        private static Cliente ClienteValido() => new("Jo√£o Silva", "529.982.247-25", "joao@email.com");
 
         [Fact]
         public async Task HandleAsync_ClienteExistente_DeveRetornarResponse()
@@ -26,7 +26,7 @@ namespace OficinaMecanica.Tests.UseCases
             var response = await CriarUseCase().HandleAsync(cliente.Id, CancellationToken.None);
 
             Assert.Equal(cliente.Id, response.Id);
-            Assert.Equal("Jo„o Silva", response.Nome);
+            Assert.Equal("Jo√£o Silva", response.Nome);
         }
 
         [Fact]

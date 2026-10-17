@@ -152,7 +152,8 @@ namespace OficinaMecanica.Infrastructure.Persistence.Configurations
             builder.Ignore(os => os.TotalServicos);
             builder.Ignore(os => os.TotalPecas);
             builder.Ignore(os => os.TotalOrcamento);
-            builder.Ignore(os => os.ProgressoServicos);
+            builder.Property(os => os.LinkPagamento)
+                .HasMaxLength(500);
 
             // HistoricoStatus como Owned Type (Value Object)
             var historicoNavigation = builder.Metadata.FindNavigation(nameof(OrdemServico.HistoricoStatus));

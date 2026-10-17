@@ -16,7 +16,7 @@ namespace OficinaMecanica.Tests.UseCases
         private AtualizarClienteUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
         private static Cliente ClienteValido() =>
-            new("Jo„o Silva", "529.982.247-25", "joao@email.com", "11999999999");
+            new("Jo√£o Silva", "529.982.247-25", "joao@email.com", "11999999999");
 
         [Fact]
         public async Task HandleAsync_ComDadosValidos_DeveAtualizarCliente()
@@ -27,14 +27,14 @@ namespace OficinaMecanica.Tests.UseCases
             var request = new AtualizarClienteRequest
             {
                 Id = cliente.Id,
-                Nome = "Jo„o Atualizado",
+                Nome = "Jo√£o Atualizado",
                 Email = "novo@email.com",
                 Telefone = "11988888888"
             };
 
             var response = await CriarUseCase().HandleAsync(request);
 
-            Assert.Equal("Jo„o Atualizado", response.Nome);
+            Assert.Equal("Jo√£o Atualizado", response.Nome);
             _repoMock.Verify(r => r.UpdateAsync(cliente, default), Times.Once);
         }
 
@@ -58,7 +58,7 @@ namespace OficinaMecanica.Tests.UseCases
             var request = new AtualizarClienteRequest
             {
                 Id = cliente.Id,
-                Nome = "Jo„o",
+                Nome = "Jo√£o",
                 Documento = "111.444.777-35"
             };
 
@@ -78,7 +78,7 @@ namespace OficinaMecanica.Tests.UseCases
             var request = new AtualizarClienteRequest
             {
                 Id = cliente.Id,
-                Nome = "Jo„o",
+                Nome = "Jo√£o",
                 Documento = "111.444.777-35"
             };
 
@@ -96,7 +96,7 @@ namespace OficinaMecanica.Tests.UseCases
             var request = new AtualizarClienteRequest
             {
                 Id = cliente.Id,
-                Nome = "Jo„o",
+                Nome = "Jo√£o",
                 Documento = "111.111.111-11"
             };
 
@@ -109,7 +109,7 @@ namespace OficinaMecanica.Tests.UseCases
             var cliente = ClienteValido();
             _repoMock.Setup(r => r.GetByIdAsync(cliente.Id, default)).ReturnsAsync(cliente);
 
-            var request = new AtualizarClienteRequest { Id = cliente.Id, Nome = "Jo„o", Email = "email-invalido" };
+            var request = new AtualizarClienteRequest { Id = cliente.Id, Nome = "Jo√£o", Email = "email-invalido" };
 
             var ex = await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
             Assert.Contains("Email", ex.Errors.Keys);
@@ -121,7 +121,7 @@ namespace OficinaMecanica.Tests.UseCases
             var cliente = ClienteValido();
             _repoMock.Setup(r => r.GetByIdAsync(cliente.Id, default)).ReturnsAsync(cliente);
 
-            var request = new AtualizarClienteRequest { Id = cliente.Id, Nome = "Jo„o", Telefone = "123" };
+            var request = new AtualizarClienteRequest { Id = cliente.Id, Nome = "Jo√£o", Telefone = "123" };
 
             var ex = await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
             Assert.Contains("Telefone", ex.Errors.Keys);

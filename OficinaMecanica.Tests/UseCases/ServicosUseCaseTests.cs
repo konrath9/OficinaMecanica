@@ -18,26 +18,26 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task HandleAsync_ComDadosValidos_DeveCriarServico()
         {
-            _repoMock.Setup(r => r.GetByNomeAsync("Troca de 髄eo", default)).ReturnsAsync((Servico?)null);
+            _repoMock.Setup(r => r.GetByNomeAsync("Troca de 贸leo", default)).ReturnsAsync((Servico?)null);
             _repoMock.Setup(r => r.AddAsync(It.IsAny<Servico>(), default))
                      .ReturnsAsync((Servico s, CancellationToken _) => s);
 
-            var request = new CriarServicoRequest { Nome = "Troca de 髄eo", Descricao = "Troca de 髄eo do motor", Preco = 150m };
+            var request = new CriarServicoRequest { Nome = "Troca de 贸leo", Descricao = "Troca de 贸leo do motor", Preco = 150m };
 
             var response = await CriarUseCase().HandleAsync(request);
 
             Assert.NotEqual(Guid.Empty, response.Id);
-            Assert.Equal("Troca de 髄eo", response.Nome);
+            Assert.Equal("Troca de 贸leo", response.Nome);
             Assert.Equal(150m, response.Preco);
         }
 
         [Fact]
         public async Task HandleAsync_NomeDuplicado_DeveLancarValidationException()
         {
-            var existente = new Servico("Troca de 髄eo", "Desc", 150m);
-            _repoMock.Setup(r => r.GetByNomeAsync("Troca de 髄eo", default)).ReturnsAsync(existente);
+            var existente = new Servico("Troca de 贸leo", "Desc", 150m);
+            _repoMock.Setup(r => r.GetByNomeAsync("Troca de 贸leo", default)).ReturnsAsync(existente);
 
-            var request = new CriarServicoRequest { Nome = "Troca de 髄eo", Descricao = "Desc", Preco = 100m };
+            var request = new CriarServicoRequest { Nome = "Troca de 贸leo", Descricao = "Desc", Preco = 100m };
 
             var ex = await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
             Assert.Contains("Nome", ex.Errors.Keys);
@@ -59,7 +59,7 @@ namespace OficinaMecanica.Tests.UseCases
         {
             _repoMock.Setup(r => r.GetByNomeAsync(It.IsAny<string>(), default)).ReturnsAsync((Servico?)null);
 
-            var request = new CriarServicoRequest { Nome = "Servi鏾", Descricao = "Desc", Preco = -1m };
+            var request = new CriarServicoRequest { Nome = "Servi莽o", Descricao = "Desc", Preco = -1m };
 
             await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
         }
@@ -117,7 +117,7 @@ namespace OficinaMecanica.Tests.UseCases
         {
             var servico = new Servico("Original", "Desc", 100m);
             _repoMock.Setup(r => r.GetByIdAsync(servico.Id, default)).ReturnsAsync(servico);
-            // retorna o pr髉rio servi鏾 (mesmo Id)
+            // retorna o pr贸prio servi莽o (mesmo Id)
             _repoMock.Setup(r => r.GetByNomeAsync("Original", default)).ReturnsAsync(servico);
 
             var request = new AtualizarServicoRequest { Id = servico.Id, Nome = "Original", Descricao = "Nova desc", Preco = 120m };
@@ -138,13 +138,13 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task HandleAsync_ServicoExistente_DeveRetornarResponse()
         {
-            var servico = new Servico("Troca de 髄eo", "Desc", 150m);
+            var servico = new Servico("Troca de 贸leo", "Desc", 150m);
             _repoMock.Setup(r => r.GetByIdAsync(servico.Id, default)).ReturnsAsync(servico);
 
             var response = await CriarUseCase().HandleAsync(servico.Id);
 
             Assert.Equal(servico.Id, response.Id);
-            Assert.Equal("Troca de 髄eo", response.Nome);
+            Assert.Equal("Troca de 贸leo", response.Nome);
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace OficinaMecanica.Tests.UseCases
         {
             var lista = new List<Servico>
             {
-                new("Troca de 髄eo", "Desc", 150m),
+                new("Troca de 贸leo", "Desc", 150m),
                 new("Alinhamento", "Desc", 80m)
             };
             _repoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(lista);

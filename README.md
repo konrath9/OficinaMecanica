@@ -4,6 +4,113 @@
 
 Back-end de uma oficina mecânica de médio porte, focado em **gestão de ordens de serviço, clientes, veículos, serviços e peças**, aplicando **Domain-Driven Design (DDD)** com boas práticas de qualidade de software e segurança.
 
+### Fase 4 — Microsserviços e Saga Pattern
+
+A oficina passou a operar em escala nacional, e o monolito foi dividido em **três microsserviços independentes**. Cada um
+tem repositório, banco, pipeline de CI/CD e deploy no Kubernetes próprios. A consistência entre eles é garantida por
+uma **Saga orquestrada** sobre RabbitMQ.
+
+| Serviço | Repositório | Responsabilidade | Banco |
+|---|---|---|---|
+| **OS Service** (este repo) | [konrath9/OficinaMecanica](https://github.com/konrath9/OficinaMecanica) | Abertura da OS, status e histórico, clientes, veículos, catálogo de serviços e peças, login de staff. **Orquestrador da Saga** | PostgreSQL (relacional) |
+| **Billing Service** | [konrath9/oficina-billing-service](https://github.com/konrath9/oficina-billing-service) | Orçamento, aprovação, cobrança e estorno via **Mercado Pago** | PostgreSQL (relacional) |
+| **Execution Service** | [konrath9/oficina-execution-service](https://github.com/konrath9/oficina-execution-service) | Fila de execução, diagnóstico e reparo, finalização | **MongoDB** (NoSQL) |
+
+```mermaid
+flowchart LR
+    C["Cliente / Staff"] -->|HTTP| GW["Traefik (Ingress / API Gateway)"]
+    GW -->|/api/* | OS["OS Service<br/>(orquestrador da Saga)"]
+    GW -->|/api/orcamentos, /api/pagamentos| BI["Billing Service"]
+    GW -->|/api/execucoes| EX["Execution Service"]
+    LAMBDA["Lambda auth (CPF → JWT)"] -.JWT compartilhado.-> OS & BI & EX
+
+    OS <-->|comandos / eventos| MQ[["RabbitMQ"]]
+    BI <--> MQ
+    EX <--> MQ
+
+    OS --- PG1[("PostgreSQL<br/>oficina_mecanica<br/>+ saga + outbox")]
+    BI --- PG2[("PostgreSQL<br/>oficina_billing<br/>+ outbox")]
+    EX --- MG[("MongoDB<br/>oficina_execucao")]
+    BI -->|Checkout Pro / refund| MP["Mercado Pago"]
+    MP -.webhook.-> BI
+    OS & BI & EX -.OTLP traces/metrics/logs.-> NR["New Relic"]
+```
+
+**Nenhum serviço acessa o banco de outro.** Entre serviços, a comunicação é assíncrona via RabbitMQ (MassTransit 8). Do
+cliente para os serviços, é REST síncrono.
+
+#### Saga Pattern — estratégia escolhida: orquestração
+
+```mermaid
+stateDiagram-v2
+    [*] --> AguardandoOrcamento: diagnóstico concluído / GerarOrcamento
+    AguardandoOrcamento --> AguardandoAprovacao: OrcamentoGerado
+    AguardandoOrcamento --> FalhaOrcamento: OrcamentoFalhou (OS segue em diagnóstico)
+    AguardandoAprovacao --> AguardandoPagamento: cliente aprova / AprovarOrcamento
+    AguardandoAprovacao --> Cancelada: cliente reprova / CancelarOrcamento
+    AguardandoPagamento --> EmExecucao: PagamentoAprovado / IniciarExecucao
+    AguardandoPagamento --> Cancelada: PagamentoRecusado / CancelarOrcamento
+    EmExecucao --> Finalizada: ExecucaoFinalizada
+    EmExecucao --> Estornando: ExecucaoFalhou / EstornarPagamento
+    Estornando --> Cancelada: PagamentoEstornado
+```
+
+- O orquestrador é uma `MassTransitStateMachine` no OS Service
+  ([OrdemServicoStateMachine.cs](OficinaMecanica.Infrastructure/Mensageria/OrdemServicoStateMachine.cs)), com estado persistido na
+  tabela `saga_ordem_servico`, consultável em `GET /api/ordens-servico/{id}/saga`.
+- **Outbox transacional:** a mudança da OS, o estado da saga e as mensagens publicadas são gravados num único `SaveChanges`,
+  então não há dual-write. Os consumers são idempotentes, porque o RabbitMQ entrega "at least once".
+- **Rollback/compensação** em cada etapa: orçamento cancelado, pagamento estornado no Mercado Pago, OS cancelada com o motivo
+  no histórico e e-mail ao cliente.
+- **Por que orquestração e não coreografia:** o fluxo da OS é sequencial e tem um dono natural (o OS Service). Com
+  orquestração, a sequência e as compensações ficam num único arquivo legível, e os participantes ficam simples (recebem
+  comando, publicam resultado). Detalhes em [ADR 0005](docs/adr/0005-saga-orquestrada-com-masstransit.md); contratos
+  de mensagem em [docs/fase4/contratos-mensageria.md](docs/fase4/contratos-mensageria.md).
+
+#### Justificativa da divisão e das tecnologias
+
+- **Fronteiras por capacidade de negócio:** atendimento (OS), cobrança (Billing) e produção (Execution) mudam por motivos
+  diferentes e escalam de forma diferente. A fila de execução tem picos próprios, e o pagamento depende de um terceiro (Mercado Pago).
+- **PostgreSQL no OS e no Billing:** dados transacionais e relacionais (OS ↔ cliente ↔ veículo; orçamento ↔ pagamento),
+  e o outbox precisa de transação ACID.
+- **MongoDB no Execution:** a execução é um agregado autocontido (serviços, tempos, histórico aninhados), lido e gravado
+  inteiro, sem joins. O esquema evolui por tipo de reparo.
+- **RabbitMQ + MassTransit:** broker leve que roda dentro do próprio k3s. O MassTransit entrega state machine, outbox, retry e
+  trace distribuído prontos.
+- **Mercado Pago (Checkout Pro):** o Billing cria a preferência de pagamento e valida o webhook consultando a API do MP.
+  Sem `MercadoPago__AccessToken`, usa um gateway fake para dev, CI e demonstração.
+
+#### Testes, BDD e qualidade
+
+- **BDD (Reqnroll/Gherkin)** cobrindo o fluxo completo da Saga e as compensações:
+  [SagaOrdemServico.feature](OficinaMecanica.Tests/Bdd/SagaOrdemServico.feature) (4 cenários).
+- **374 testes** neste serviço (unitários, integração com `WebApplicationFactory` e BDD), com cobertura de **88,46% de linhas**.
+- **Gate de cobertura de 80% no CI** (`coverlet`, `-p:Threshold=80`): o pipeline falha abaixo disso. A análise estática roda
+  no SonarCloud ([workflow](.github/workflows/build.yml)).
+
+| Serviço | Testes | Cobertura de linhas |
+|---|---|---|
+| OS Service | 374 | 88,46% |
+| Billing Service | 48 | 98,48% |
+| Execution Service | 30 | 94,92% |
+
+#### Executar o sistema completo localmente
+
+Com os três repositórios clonados lado a lado:
+
+```bash
+docker compose up -d --build              # OS :5000 · Billing :5001 · Execution :5002 · RabbitMQ UI :15672 · Mailpit :8025
+node scripts/demo-saga.mjs                 # fluxo completo da OS passando pelos 3 serviços
+node scripts/demo-saga.mjs pagamento-recusado
+node scripts/demo-saga.mjs falha-execucao  # compensação com estorno
+```
+
+#### CI/CD e repositórios protegidos
+
+Cada repositório tem seu próprio pipeline: build → testes com gate de cobertura → SonarCloud → imagem no GHCR → deploy num
+cluster `kind` efêmero com smoke test → deploy no k3s de produção. A branch principal é protegida: merge só via PR, com os
+checks de build/teste obrigatórios.
+
 ### Fase 2 — Evolução para produção
 
 A Fase 2 evolui a aplicação da Fase 1 para suportar operação em escala, com foco em:
@@ -96,6 +203,7 @@ O job acima só **valida** a aplicação (build/test/manifests) num cluster `kin
 | `PROD_DB_CONNECTION_STRING` | Connection string real do RDS (`oficina-mecanica-infra-db`), ex.: `Host=<rds_address>;Port=5432;Database=oficina_mecanica;Username=<db_username>;Password=<db_password>` |
 | `PROD_JWT_SECRET_KEY` | Mesma chave configurada como `JWT_SECRET_KEY` no repositório [oficina-mecanica-auth](https://github.com/konrath9/oficina-mecanica-auth) — precisa ser **idêntica** nos dois repositórios, senão os tokens emitidos pela Function Serverless (login via CPF) não são aceitos por esta API |
 | `NEW_RELIC_LICENSE_KEY` | License Key do New Relic (opcional — sem ela a aplicação roda normalmente, só não envia telemetria). Ver [`observability/newrelic`](observability/newrelic/README.md) |
+| `RABBITMQ_PASSWORD` | Senha do usuário `oficina` do RabbitMQ (Fase 4) — **a mesma** nos três repositórios (OS, Billing, Execution) |
 
 ## Funcionalidades
 

@@ -18,13 +18,11 @@ namespace OficinaMecanica.Domain.Entities
         public DateTime? IniciadaEm { get; private set; }
         public DateTime? FinalizadaEm { get; private set; }
         public DateTime? EntregueEm { get; private set; }
+        /// <summary>Link de checkout do Mercado Pago, recebido do Billing Service via Saga.</summary>
+        public string? LinkPagamento { get; private set; }
         public IReadOnlyCollection<ItemServico> Servicos => _servicos.AsReadOnly();
         public IReadOnlyCollection<ItemPeca> Pecas => _pecas.AsReadOnly();
         public IReadOnlyCollection<HistoricoStatusOrdemServico> HistoricoStatus => _historicoStatus.AsReadOnly();
-
-        /// <summary>Progresso da execu��o: quantos servi�os foram conclu�dos do total.</summary>
-        public (int Concluidos, int Total) ProgressoServicos =>
-            (_servicos.Count(s => s.FinalizadoEm.HasValue), _servicos.Count);
 
         public decimal TotalServicos => _servicos.Sum(s => s.TotalPrice);
         public decimal TotalPecas => _pecas.Sum(p => p.TotalPrice);
@@ -115,28 +113,58 @@ namespace OficinaMecanica.Domain.Entities
             UpdateModificationDate();
         }
 
-        public void EnviarParaAprovacao()
+        /// <summary>
+        /// Técnico concluiu o diagnóstico: valida que há itens para orçar e registra a solicitação.
+        /// O status só muda para AguardandoAprovacao quando o Billing Service confirma o orçamento
+        /// (evento OrcamentoGerado da Saga) - ver <see cref="EnviarParaAprovacao"/>.
+        /// </summary>
+        public void SolicitarOrcamento()
         {
-            if (Status != StatusOrdemServico.EmDiagnostico)
-                throw new InvalidOperationException("Apenas ordens em diagnostico podem ser enviadas para aprovacao.");
-
-            if (!_servicos.Any() && !_pecas.Any())
-                throw new InvalidOperationException("A OS deve ter pelo menos um servico ou peca para enviar o orcamento.");
-
-            Status = StatusOrdemServico.AguardandoAprovacao;
-            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.AguardandoAprovacao, "Or�amento enviado para aprova��o do cliente"));
+            ValidarEnvioParaAprovacao();
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.EmDiagnostico, "Diagnóstico concluído - orçamento solicitado ao Billing"));
             UpdateModificationDate();
         }
 
+        public void EnviarParaAprovacao()
+        {
+            ValidarEnvioParaAprovacao();
+            Status = StatusOrdemServico.AguardandoAprovacao;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.AguardandoAprovacao, "Orçamento enviado para aprovação do cliente"));
+            UpdateModificationDate();
+        }
+
+        /// <summary>Compensação da Saga: o Billing não conseguiu gerar o orçamento - a OS segue em diagnóstico.</summary>
+        public void RegistrarFalhaOrcamento(string motivo)
+        {
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(Status, $"Falha ao gerar orçamento: {motivo}"));
+            UpdateModificationDate();
+        }
+
+        /// <summary>Cliente aprovou o orçamento - a execução só começa após a confirmação do pagamento.</summary>
         public void Aprovar()
         {
             if (Status != StatusOrdemServico.AguardandoAprovacao)
                 throw new InvalidOperationException("Apenas ordens aguardando aprovacao podem ser aprovadas.");
 
+            Status = StatusOrdemServico.AguardandoPagamento;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.AguardandoPagamento, "Orçamento aprovado pelo cliente - aguardando pagamento"));
+            UpdateModificationDate();
+        }
+
+        public void RegistrarLinkPagamento(string? link)
+        {
+            LinkPagamento = link;
+            UpdateModificationDate();
+        }
+
+        public void ConfirmarPagamento()
+        {
+            if (Status != StatusOrdemServico.AguardandoPagamento)
+                throw new InvalidOperationException("Apenas ordens aguardando pagamento podem ter o pagamento confirmado.");
+
             Status = StatusOrdemServico.EmExecucao;
-            if (IniciadaEm == null)
-                IniciadaEm = DateTime.UtcNow;
-            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.EmExecucao, "Or�amento aprovado � execu��o iniciada"));
+            IniciadaEm ??= DateTime.UtcNow;
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.EmExecucao, "Pagamento confirmado - OS enviada para a fila de execução"));
             UpdateModificationDate();
         }
 
@@ -145,12 +173,9 @@ namespace OficinaMecanica.Domain.Entities
             if (Status != StatusOrdemServico.EmExecucao)
                 throw new InvalidOperationException("Apenas ordens em execucao podem ser finalizadas.");
 
-            if (!_servicos.Any() && !_pecas.Any())
-                throw new InvalidOperationException("A OS deve ter pelo menos um servico ou peca para ser finalizada.");
-
             Status = StatusOrdemServico.Finalizada;
             FinalizadaEm = DateTime.UtcNow;
-            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Finalizada, "Todos os servi�os conclu�dos"));
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Finalizada, "Execução concluída"));
             UpdateModificationDate();
         }
 
@@ -161,7 +186,7 @@ namespace OficinaMecanica.Domain.Entities
 
             Status = StatusOrdemServico.Entregue;
             EntregueEm = DateTime.UtcNow;
-            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Entregue, "Ve�culo entregue ao cliente"));
+            _historicoStatus.Add(new HistoricoStatusOrdemServico(StatusOrdemServico.Entregue, "Veículo entregue ao cliente"));
             UpdateModificationDate();
         }
 
@@ -177,34 +202,19 @@ namespace OficinaMecanica.Domain.Entities
             UpdateModificationDate();
         }
 
-        public void IniciarExecucaoServico(Guid servicoId)
-        {
-            if (Status != StatusOrdemServico.EmExecucao)
-                throw new InvalidOperationException("A OS precisa estar Em Execucao para iniciar um servico.");
-
-            var item = _servicos.FirstOrDefault(s => s.ServicoId == servicoId)
-                ?? throw new InvalidOperationException($"Servico {servicoId} nao encontrado nesta OS.");
-
-            item.Iniciar();
-            UpdateModificationDate();
-        }
-
-        public void FinalizarExecucaoServico(Guid servicoId)
-        {
-            if (Status != StatusOrdemServico.EmExecucao)
-                throw new InvalidOperationException("A OS precisa estar Em Execucao para finalizar um servico.");
-
-            var item = _servicos.FirstOrDefault(s => s.ServicoId == servicoId)
-                ?? throw new InvalidOperationException($"Servico {servicoId} nao encontrado nesta OS.");
-
-            item.Finalizar();
-            UpdateModificationDate();
-        }
-
         public void AtualizarObservacoes(string observacoes)
         {
             Observacoes = observacoes;
             UpdateModificationDate();
+        }
+
+        private void ValidarEnvioParaAprovacao()
+        {
+            if (Status != StatusOrdemServico.EmDiagnostico)
+                throw new InvalidOperationException("Apenas ordens em diagnostico podem ser enviadas para aprovacao.");
+
+            if (!_servicos.Any() && !_pecas.Any())
+                throw new InvalidOperationException("A OS deve ter pelo menos um servico ou peca para enviar o orcamento.");
         }
 
         private void ValidarEdicao()

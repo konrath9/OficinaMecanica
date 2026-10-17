@@ -1,3 +1,4 @@
+using OficinaMecanica.Contracts;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -100,65 +101,88 @@ namespace OficinaMecanica.Tests.Integration
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
+        /// <summary>Espera a Saga (em memória nos testes) processar as mensagens e a OS chegar ao status esperado.</summary>
+        private async Task AguardarStatusAsync(Guid osId, string status)
+        {
+            string? atual = null;
+            for (var i = 0; i < 50; i++)
+            {
+                atual = (await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<StatusResponse>())!.Status;
+                if (atual == status) return;
+                await Task.Delay(100);
+            }
+            Assert.Fail($"OS {osId} ficou em {atual}, esperado {status}");
+        }
+
         [Fact]
-        public async Task FluxoCompleto_OS_AdicionarServicoPecaEAvancarStatus()
+        public async Task FluxoCompleto_OS_PassandoPelaSagaAteEntregue()
         {
             await AutenticarAsync();
 
             var clienteId = await CriarClienteAsync("111.444.777-35", "Cliente Fluxo");
             var veiculoId = await CriarVeiculoAsync(clienteId, "FLX-0001");
-            var servicoId = await CriarServicoAsync("Revis�o Fluxo");
+            var servicoId = await CriarServicoAsync("Revisão Fluxo");
             var pecaId = await CriarPecaAsync("FLX-001", "Filtro Fluxo", 20);
 
-            // Criar OS
-            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new
-            {
-                clienteId, veiculoId, observacoes = "Revis�o completa"
-            });
+            var osResponse = await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId, observacoes = "Revisão completa" });
             Assert.Equal(HttpStatusCode.Created, osResponse.StatusCode);
-            var os = await osResponse.Content.ReadFromJsonAsync<IdResponse>();
-            var osId = os!.Id;
+            var osId = (await osResponse.Content.ReadFromJsonAsync<IdResponse>())!.Id;
 
-            // Adicionar servi�o
-            var addServico = await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/servicos", new
+            Assert.Equal(HttpStatusCode.OK, (await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/servicos", new { servicoId, quantidade = 1 })).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/pecas", new { pecaId, quantidade = 2 })).StatusCode);
+
+            // Diagnóstico concluído -> Saga pede orçamento ao Billing (202: processamento assíncrono)
+            Assert.Equal(HttpStatusCode.Accepted, (await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null)).StatusCode);
+
+            // Billing responde -> OS aguarda aprovação
+            await _factory.PublicarAsync(new OrcamentoGerado(osId, Guid.NewGuid(), 200m));
+            await AguardarStatusAsync(osId, "AguardandoAprovacao");
+
+            var numero = (await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>())!.Numero;
+            Assert.Equal(HttpStatusCode.OK, (await _client.PostAsync($"/api/acompanhamento/{numero}/aprovar", null)).StatusCode);
+            await AguardarStatusAsync(osId, "AguardandoPagamento");
+
+            // Pagamento confirmado (Mercado Pago via Billing) -> OS vai para a fila de execução
+            await _factory.PublicarAsync(new PagamentoAprovado(osId, Guid.NewGuid(), 200m));
+            await AguardarStatusAsync(osId, "EmExecucao");
+
+            // Execution Service concluiu -> OS finalizada
+            await _factory.PublicarAsync(new ExecucaoFinalizada(osId, DateTime.UtcNow));
+            await AguardarStatusAsync(osId, "Finalizada");
+
+            Assert.Equal(HttpStatusCode.OK, (await _client.PostAsync($"/api/ordens-servico/{osId}/registrar-entrega", null)).StatusCode);
+            await AguardarStatusAsync(osId, "Entregue");
+        }
+
+        [Fact]
+        public async Task Saga_FalhaNaExecucao_DeveEstornarPagamentoECancelarOs()
+        {
+            await AutenticarAsync();
+            var clienteId = await CriarClienteAsync("390.533.447-05", "Cliente Estorno");
+            var veiculoId = await CriarVeiculoAsync(clienteId, "EST-0002");
+            var servicoId = await CriarServicoAsync("Servico Estorno");
+
+            var osId = (await (await _client.PostAsJsonAsync("/api/ordens-servico", new { clienteId, veiculoId })).Content.ReadFromJsonAsync<IdResponse>())!.Id;
+            await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/servicos", new { servicoId, quantidade = 1 });
+            await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
+            await _factory.PublicarAsync(new OrcamentoGerado(osId, Guid.NewGuid(), 100m));
+            await AguardarStatusAsync(osId, "AguardandoAprovacao");
+
+            var numero = (await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>())!.Numero;
+            await _client.PostAsync($"/api/acompanhamento/{numero}/aprovar", null);
+            await AguardarStatusAsync(osId, "AguardandoPagamento");
+            await _factory.PublicarAsync(new PagamentoAprovado(osId, Guid.NewGuid(), 100m));
+            await AguardarStatusAsync(osId, "EmExecucao");
+
+            // Falha na execução -> compensação: estorno -> OS cancelada
+            await _factory.PublicarAsync(new ExecucaoFalhou(osId, "Peça indisponível"));
+            // O Billing só estorna depois de receber EstornarPagamento: reenvia até a Saga estar em Estornando (duplicatas são ignoradas)
+            for (var i = 0; i < 20; i++)
             {
-                servicoId, quantidade = 1
-            });
-            Assert.Equal(HttpStatusCode.OK, addServico.StatusCode);
-
-            // Adicionar pe�a
-            var addPeca = await _client.PostAsJsonAsync($"/api/ordens-servico/{osId}/pecas", new
-            {
-                pecaId, quantidade = 2
-            });
-            Assert.Equal(HttpStatusCode.OK, addPeca.StatusCode);
-
-            // T�cnico conclui diagn�stico ? status AguardandoAprovacao (autom�tico)
-            var concluir = await _client.PostAsync($"/api/ordens-servico/{osId}/concluir-diagnostico", null);
-            Assert.Equal(HttpStatusCode.OK, concluir.StatusCode);
-
-            // Fase 3: acompanhamento exige token. O token administrativo (staff) acessa qualquer OS.
-            var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{osId}")).Content.ReadFromJsonAsync<NumeroResponse>();
-            var aprovar = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
-            Assert.Equal(HttpStatusCode.OK, aprovar.StatusCode);
-
-            // Registrar entrega ? status Entregue (autom�tico ap�s Finalizar)
-            // Primeiro finaliza manualmente (sem servi�os individuais para executar)
-            // Neste teste n�o h� execu��o de servi�o individual, ent�o finalizamos via cancelar n�o.
-            // Vamos adicionar execu��o do servi�o para acionar a auto-finaliza��o
-            var execIniciar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "iniciar" });
-            Assert.Equal(HttpStatusCode.OK, execIniciar.StatusCode);
-
-            var execFinalizar = await _client.PutAsJsonAsync($"/api/ordens-servico/{osId}/servicos/{servicoId}/execucao", new { acao = "finalizar" });
-            Assert.Equal(HttpStatusCode.OK, execFinalizar.StatusCode); // auto-finaliza a OS
-
-            // Registrar entrega ? status Entregue (autom�tico)
-            var entregar = await _client.PostAsync($"/api/ordens-servico/{osId}/registrar-entrega", null);
-            Assert.Equal(HttpStatusCode.OK, entregar.StatusCode);
-
-            // GET para confirmar estado final
-            var get = await _client.GetAsync($"/api/ordens-servico/{osId}");
-            Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+                await _factory.PublicarAsync(new PagamentoEstornado(osId, Guid.NewGuid()));
+                await Task.Delay(100);
+            }
+            await AguardarStatusAsync(osId, "Cancelada");
         }
 
         [Fact]
@@ -324,6 +348,8 @@ namespace OficinaMecanica.Tests.Integration
 
             await _client.PostAsJsonAsync($"/api/ordens-servico/{os!.Id}/servicos", new { servicoId, quantidade = 1 });
             await _client.PostAsync($"/api/ordens-servico/{os.Id}/concluir-diagnostico", null);
+            await _factory.PublicarAsync(new OrcamentoGerado(os.Id, Guid.NewGuid(), 100m));
+            await AguardarStatusAsync(os.Id, "AguardandoAprovacao");
             var osNumero = await (await _client.GetAsync($"/api/ordens-servico/{os.Id}")).Content.ReadFromJsonAsync<NumeroResponse>();
 
             var response = await _client.PostAsync($"/api/acompanhamento/{osNumero!.Numero}/aprovar", null);
@@ -351,4 +377,5 @@ namespace OficinaMecanica.Tests.Integration
     }
 
     internal record OsResponse(Guid Id, string Numero);
+    internal record StatusResponse(string Status);
 }

@@ -1,0 +1,77 @@
+# Broker de mensageria da Saga (Fase 4). Declarado aqui porque o OS Service e o orquestrador; os CIs do
+# Billing e do Execution aplicam este mesmo arquivo direto do GitHub no cluster kind efemero deles.
+# Senha de demonstracao: o job deploy-producao troca "oficina123" pelo secret RABBITMQ_PASSWORD antes de aplicar.
+# ponytail: Deployment com emptyDir - mensagens em fila se perdem se o pod reiniciar; StatefulSet + PVC se isso importar.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+  namespace: oficina-mecanica
+type: Opaque
+stringData:
+  RABBITMQ_DEFAULT_USER: "oficina"
+  RABBITMQ_DEFAULT_PASS: "oficina123"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: oficina-mecanica
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management-alpine
+          ports:
+            - containerPort: 5672
+              name: amqp
+            - containerPort: 15672
+              name: management
+          envFrom:
+            - secretRef:
+                name: rabbitmq-credentials
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: oficina-mecanica
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672

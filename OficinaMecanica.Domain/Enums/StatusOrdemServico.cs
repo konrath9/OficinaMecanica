@@ -8,6 +8,7 @@ namespace OficinaMecanica.Domain.Enums
         EmExecucao = 4,
         Finalizada = 5,
         Entregue = 6,
-        Cancelada = 7
+        Cancelada = 7,
+        AguardandoPagamento = 8
     }
 }

@@ -42,12 +42,14 @@ namespace OficinaMecanica.Tests.UseCases
                     os.AdicionarServico(new OficinaMecanica.Domain.ValueObjects.ItemServico(Guid.NewGuid(), "Servico", 100m, 1));
                     os.EnviarParaAprovacao();
                     os.Aprovar();
+                    os.ConfirmarPagamento();
                     break;
                 case StatusOrdemServico.Finalizada:
                     os.IniciarDiagnostico();
                     os.AdicionarServico(new OficinaMecanica.Domain.ValueObjects.ItemServico(Guid.NewGuid(), "Servico", 100m, 1));
                     os.EnviarParaAprovacao();
                     os.Aprovar();
+                    os.ConfirmarPagamento();
                     os.Finalizar();
                     break;
                 case StatusOrdemServico.Entregue:
@@ -55,6 +57,7 @@ namespace OficinaMecanica.Tests.UseCases
                     os.AdicionarServico(new OficinaMecanica.Domain.ValueObjects.ItemServico(Guid.NewGuid(), "Servico", 100m, 1));
                     os.EnviarParaAprovacao();
                     os.Aprovar();
+                    os.ConfirmarPagamento();
                     os.Finalizar();
                     os.Entregar();
                     break;

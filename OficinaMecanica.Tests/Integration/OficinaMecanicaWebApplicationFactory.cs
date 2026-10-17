@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -102,6 +103,10 @@ namespace OficinaMecanica.Tests.Integration
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        /// <summary>Simula outro microsservico (Billing/Execution) publicando um evento no bus da API (transporte em memoria nos testes).</summary>
+        public Task PublicarAsync<T>(T mensagem) where T : class =>
+            Services.GetRequiredService<IBus>().Publish(mensagem);
 
         private sealed record TokenResponse(string Token);
     }

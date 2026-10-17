@@ -4,16 +4,8 @@ namespace OficinaMecanica.Application.DTOs.OrdemServico
     {
         public DateTime? PeriodoInicio { get; set; }
         public DateTime? PeriodoFim { get; set; }
-        public int TotalServicosFinalizados { get; set; }
-        public IEnumerable<TempoMedioPorServicoDto> PorServico { get; set; } = [];
-    }
-
-    public class TempoMedioPorServicoDto
-    {
-        public Guid ServicoId { get; set; }
-        public string Descricao { get; set; } = string.Empty;
+        public int TotalOrdensFinalizadas { get; set; }
         public double TempoMedioHoras { get; set; }
         public double TempoMedioDias { get; set; }
-        public int TotalExecucoes { get; set; }
     }
 }

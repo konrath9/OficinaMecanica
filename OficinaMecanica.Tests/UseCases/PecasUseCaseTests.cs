@@ -15,7 +15,7 @@ namespace OficinaMecanica.Tests.UseCases
 
         private CriarPecaUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
-        private static Peca PecaValida() => new("OL-001", "Óleo 5W30", 45m, 10);
+        private static Peca PecaValida() => new("OL-001", "Ã“leo 5W30", 45m, 10);
 
         [Fact]
         public async Task HandleAsync_ComDadosValidos_DeveCriarPeca()
@@ -24,7 +24,7 @@ namespace OficinaMecanica.Tests.UseCases
             _repoMock.Setup(r => r.AddAsync(It.IsAny<Peca>(), default))
                      .ReturnsAsync((Peca p, CancellationToken _) => p);
 
-            var request = new CriarPecaRequest { Codigo = "OL-001", Nome = "Óleo 5W30", PrecoUnitario = 45m, QuantidadeEstoque = 10 };
+            var request = new CriarPecaRequest { Codigo = "OL-001", Nome = "Ã“leo 5W30", PrecoUnitario = 45m, QuantidadeEstoque = 10 };
 
             var response = await CriarUseCase().HandleAsync(request);
 
@@ -62,7 +62,7 @@ namespace OficinaMecanica.Tests.UseCases
 
         private AtualizarPecaUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
-        private static Peca PecaValida() => new("OL-001", "Óleo 5W30", 45m, 10);
+        private static Peca PecaValida() => new("OL-001", "Ã“leo 5W30", 45m, 10);
 
         [Fact]
         public async Task HandleAsync_ComDadosValidos_DeveAtualizarPeca()
@@ -70,11 +70,11 @@ namespace OficinaMecanica.Tests.UseCases
             var peca = PecaValida();
             _repoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);
 
-            var request = new AtualizarPecaRequest { Id = peca.Id, Nome = "Óleo Sintético", PrecoUnitario = 80m };
+            var request = new AtualizarPecaRequest { Id = peca.Id, Nome = "Ã“leo SintÃ©tico", PrecoUnitario = 80m };
 
             var response = await CriarUseCase().HandleAsync(request);
 
-            Assert.Equal("Óleo Sintético", response.Nome);
+            Assert.Equal("Ã“leo SintÃ©tico", response.Nome);
             Assert.Equal(80m, response.PrecoUnitario);
             _repoMock.Verify(r => r.UpdateAsync(peca, default), Times.Once);
         }
@@ -96,7 +96,7 @@ namespace OficinaMecanica.Tests.UseCases
             _repoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);
             _repoMock.Setup(r => r.GetByCodigoAsync("OL-002", default)).ReturnsAsync((Peca?)null);
 
-            var request = new AtualizarPecaRequest { Id = peca.Id, Codigo = "OL-002", Nome = "Óleo 5W30", PrecoUnitario = 45m };
+            var request = new AtualizarPecaRequest { Id = peca.Id, Codigo = "OL-002", Nome = "Ã“leo 5W30", PrecoUnitario = 45m };
 
             var response = await CriarUseCase().HandleAsync(request);
 
@@ -111,7 +111,7 @@ namespace OficinaMecanica.Tests.UseCases
             _repoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);
             _repoMock.Setup(r => r.GetByCodigoAsync("OL-002", default)).ReturnsAsync(outra);
 
-            var request = new AtualizarPecaRequest { Id = peca.Id, Codigo = "OL-002", Nome = "Óleo", PrecoUnitario = 45m };
+            var request = new AtualizarPecaRequest { Id = peca.Id, Codigo = "OL-002", Nome = "Ã“leo", PrecoUnitario = 45m };
 
             await Assert.ThrowsAsync<ValidationException>(() => CriarUseCase().HandleAsync(request));
         }
@@ -127,7 +127,7 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task HandleAsync_PecaExistente_DeveRetornarResponse()
         {
-            var peca = new Peca("OL-001", "Óleo", 45m, 5);
+            var peca = new Peca("OL-001", "Ã“leo", 45m, 5);
             _repoMock.Setup(r => r.GetByIdAsync(peca.Id, default)).ReturnsAsync(peca);
 
             var response = await CriarUseCase().HandleAsync(peca.Id);
@@ -146,7 +146,7 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task ListarAsync_DeveRetornarTodasAsPecas()
         {
-            var lista = new List<Peca> { new("OL-001", "Óleo", 45m, 5), new("FR-002", "Freio", 80m, 3) };
+            var lista = new List<Peca> { new("OL-001", "Ã“leo", 45m, 5), new("FR-002", "Freio", 80m, 3) };
             _repoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(lista);
 
             var result = await CriarUseCase().ListarAsync();
@@ -157,7 +157,7 @@ namespace OficinaMecanica.Tests.UseCases
         [Fact]
         public async Task ListarSemEstoqueAsync_DeveRetornarPecasSemEstoque()
         {
-            var lista = new List<Peca> { new("OL-001", "Óleo", 45m, 0) };
+            var lista = new List<Peca> { new("OL-001", "Ã“leo", 45m, 0) };
             _repoMock.Setup(r => r.GetSemEstoqueAsync(default)).ReturnsAsync(lista);
 
             var result = await CriarUseCase().ListarSemEstoqueAsync();
@@ -201,7 +201,7 @@ namespace OficinaMecanica.Tests.UseCases
 
         private MovimentarEstoqueUseCase CriarUseCase() => new(_repoMock.Object, _loggerMock.Object);
 
-        private static Peca PecaComEstoque(int qtd = 10) => new("OL-001", "Óleo", 45m, qtd);
+        private static Peca PecaComEstoque(int qtd = 10) => new("OL-001", "Ã“leo", 45m, qtd);
 
         [Fact]
         public async Task HandleAsync_Entrada_DeveIncrementarEstoque()

@@ -1,10 +1,15 @@
 using Microsoft.Extensions.Logging;
+using OficinaMecanica.Application.Common.Metrics;
 using OficinaMecanica.Application.DTOs.OrdemServico;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Domain.Enums;
 
 namespace OficinaMecanica.Application.UseCases.OrdemServico
 {
+    /// <summary>
+    /// Tempo médio de execução das OS (EmExecucao -> Finalizada), calculado a partir do histórico de status.
+    /// O detalhe por serviço individual passou a ser do Execution Service (Fase 4).
+    /// </summary>
     public class TempoMedioExecucaoUseCase
     {
         private readonly IOrdemServicoRepository _ordemServicoRepository;
@@ -23,36 +28,25 @@ namespace OficinaMecanica.Application.UseCases.OrdemServico
             DateTime? periodoFim = null,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Calculando tempo medio de execucao por servico. Periodo: {Inicio} - {Fim}", periodoInicio, periodoFim);
+            _logger.LogInformation("Calculando tempo medio de execucao. Periodo: {Inicio} - {Fim}", periodoInicio, periodoFim);
 
-            var ordens = await _ordemServicoRepository.GetComServicosFinalizadosNoPeriodoAsync(periodoInicio, periodoFim, cancellationToken);
+            var ordens = await _ordemServicoRepository.GetFinalizadasNoPeriodoAsync(periodoInicio, periodoFim, cancellationToken);
 
-            // Coleta todos os itens de servico com duracao registrada
-            var itensFinalizados = ordens
-                .SelectMany(os => os.Servicos)
-                .Where(s => s.IniciadoEm.HasValue && s.FinalizadoEm.HasValue)
+            var duracoes = ordens
+                .Select(os => OrdemServicoMetricsHelper.DuracaoEntre(os.HistoricoStatus, StatusOrdemServico.EmExecucao, StatusOrdemServico.Finalizada))
+                .Where(d => d.HasValue)
+                .Select(d => d!.Value.TotalHours)
                 .ToList();
 
-            // Agrupa por ServicoId e calcula a media de duracao de cada tipo
-            var porServico = itensFinalizados
-                .GroupBy(s => new { s.ServicoId, s.Descricao })
-                .Select(g => new TempoMedioPorServicoDto
-                {
-                    ServicoId = g.Key.ServicoId,
-                    Descricao = g.Key.Descricao,
-                    TempoMedioHoras = Math.Round(g.Average(s => s.DuracaoHoras!.Value), 2),
-                    TempoMedioDias = Math.Round(g.Average(s => s.DuracaoHoras!.Value) / 24, 2),
-                    TotalExecucoes = g.Count()
-                })
-                .OrderByDescending(x => x.TempoMedioHoras)
-                .ToList();
+            var mediaHoras = duracoes.Count == 0 ? 0 : Math.Round(duracoes.Average(), 2);
 
             return new TempoMedioExecucaoResponse
             {
                 PeriodoInicio = periodoInicio,
                 PeriodoFim = periodoFim,
-                TotalServicosFinalizados = itensFinalizados.Count,
-                PorServico = porServico
+                TotalOrdensFinalizadas = duracoes.Count,
+                TempoMedioHoras = mediaHoras,
+                TempoMedioDias = Math.Round(mediaHoras / 24, 2)
             };
         }
     }

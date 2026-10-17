@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using OficinaMecanica.Domain.Entities;
 
@@ -23,6 +24,11 @@ namespace OficinaMecanica.Infrastructure.Persistence
 
             // Apply all configurations from current assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(OficinaMecanicaDbContext).Assembly);
+
+            // Tabelas do outbox/inbox transacional do MassTransit (Saga - Fase 4)
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
 
             // PostgreSQL specific configurations
             ConfigurePostgreSqlConventions(modelBuilder);

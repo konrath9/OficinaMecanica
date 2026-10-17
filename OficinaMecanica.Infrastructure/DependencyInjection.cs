@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OficinaMecanica.Application.Interfaces.Repositories;
 using OficinaMecanica.Application.Interfaces.Services;
+using OficinaMecanica.Infrastructure.Mensageria;
 using OficinaMecanica.Infrastructure.Persistence;
 using OficinaMecanica.Infrastructure.Persistence.Repositories;
 using OficinaMecanica.Infrastructure.Services;
@@ -33,6 +34,8 @@ namespace OficinaMecanica.Infrastructure
                     }));
 
             // ?? Reposit�rios ????????????????????????????????
+            services.AddMensageria(configuration);
+
             services.AddScoped<IOrdemServicoRepository, OrdemServicoRepository>();
             services.AddScoped<IClienteRepository, ClienteRepository>();
             services.AddScoped<IVeiculoRepository, VeiculoRepository>();

@@ -68,7 +68,7 @@ namespace OficinaMecanica.Tests.Integration
             // Act
             var response = await _client.PostAsJsonAsync("/api/autenticacao/registrar", new
             {
-                nome = "Mecânico Teste",
+                nome = "MecÃ¢nico Teste",
                 email = "mecanico@oficina.com",
                 senha = "Mecanico@123",
                 perfil = 2 // Mecanico
@@ -81,7 +81,7 @@ namespace OficinaMecanica.Tests.Integration
         [Fact]
         public async Task Registrar_EmailDuplicado_DeveRetornar400()
         {
-            // Act — primeiro registro
+            // Act Â— primeiro registro
             await _client.PostAsJsonAsync("/api/autenticacao/registrar", new
             {
                 nome = "Duplicado",
@@ -90,7 +90,7 @@ namespace OficinaMecanica.Tests.Integration
                 perfil = 3
             });
 
-            // Act — segundo registro com mesmo e-mail
+            // Act Â— segundo registro com mesmo e-mail
             var response = await _client.PostAsJsonAsync("/api/autenticacao/registrar", new
             {
                 nome = "Duplicado 2",

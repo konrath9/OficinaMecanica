@@ -55,8 +55,15 @@ for i in $(seq 1 "$QTD"); do
   curl -s -o /dev/null -X POST "$BASE/acompanhamento/$NUM/aprovar" "${AUTH[@]}"
   sleep 2
 
-  curl -s -o /dev/null -X PUT "$BASE/ordens-servico/$ID/servicos/$SRV/execucao" "${AUTH[@]}" -d '{"acao":"iniciar"}'
-  curl -s -o /dev/null -X PUT "$BASE/ordens-servico/$ID/servicos/$SRV/execucao" "${AUTH[@]}" -d '{"acao":"finalizar"}'
+  # Fase 4: pagamento no Billing e execucao no Execution Service (orquestrados pela Saga via RabbitMQ).
+  # Pelo Traefik os tres servicos respondem no mesmo host, entao $BASE serve para todos.
+  curl -s -o /dev/null -X POST "$BASE/pagamentos/$ID/simular" "${AUTH[@]}" -d '{"aprovado":true}'
+  sleep 2
+
+  curl -s -o /dev/null -X POST "$BASE/execucoes/$ID/iniciar-diagnostico" "${AUTH[@]}"
+  curl -s -o /dev/null -X POST "$BASE/execucoes/$ID/iniciar-reparo" "${AUTH[@]}"
+  curl -s -o /dev/null -X PUT  "$BASE/execucoes/$ID/servicos/$SRV/iniciar" "${AUTH[@]}"
+  curl -s -o /dev/null -X PUT  "$BASE/execucoes/$ID/servicos/$SRV/finalizar" "${AUTH[@]}"
   sleep 2
 
   ENTREGA=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/ordens-servico/$ID/registrar-entrega" "${AUTH[@]}")

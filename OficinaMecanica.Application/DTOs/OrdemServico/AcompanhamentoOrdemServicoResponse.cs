@@ -21,15 +21,9 @@ namespace OficinaMecanica.Application.DTOs.OrdemServico
         public DateTime? IniciadaEm { get; set; }
         public DateTime? FinalizadaEm { get; set; }
         public DateTime? EntregueEm { get; set; }
-        public ProgressoServicosResponse Progresso { get; set; } = new();
+        /// <summary>Link de pagamento (Mercado Pago), disponível após o cliente aprovar o orçamento.</summary>
+        public string? LinkPagamento { get; set; }
         public IReadOnlyList<HistoricoStatusResponse> Historico { get; set; } = [];
-    }
-
-    public class ProgressoServicosResponse
-    {
-        public int Concluidos { get; set; }
-        public int Total { get; set; }
-        public int PercentualConcluido => Total == 0 ? 0 : (int)Math.Round((double)Concluidos / Total * 100);
     }
 
     public class HistoricoStatusResponse

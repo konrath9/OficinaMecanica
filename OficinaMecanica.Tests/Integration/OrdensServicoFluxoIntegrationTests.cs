@@ -175,10 +175,11 @@ namespace OficinaMecanica.Tests.Integration
             await AguardarStatusAsync(osId, "EmExecucao");
 
             // Falha na execução -> compensação: estorno -> OS cancelada
-            await _factory.PublicarAsync(new ExecucaoFalhou(osId, "Peça indisponível"));
-            // O Billing só estorna depois de receber EstornarPagamento: reenvia até a Saga estar em Estornando (duplicatas são ignoradas)
-            for (var i = 0; i < 20; i++)
+            // Reenvia os dois eventos até a Saga avançar: no teste eles podem chegar antes de a Saga gravar o
+            // estado anterior (em produção a ordem é garantida por causalidade). Duplicatas são ignoradas.
+            for (var i = 0; i < 30; i++)
             {
+                await _factory.PublicarAsync(new ExecucaoFalhou(osId, "Peça indisponível"));
                 await _factory.PublicarAsync(new PagamentoEstornado(osId, Guid.NewGuid()));
                 await Task.Delay(100);
             }

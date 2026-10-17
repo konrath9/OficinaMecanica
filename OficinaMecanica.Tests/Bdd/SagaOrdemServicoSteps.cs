@@ -65,11 +65,11 @@ namespace OficinaMecanica.Tests.Bdd
 
         [When("o Mercado Pago confirma o pagamento")]
         public Task QuandoPagamentoAprovado() =>
-            PublicarAteStatusAsync(new PagamentoAprovado(_osId, Guid.NewGuid(), 1250m), "EmExecucao");
+            PublicarAteStatusAsync("EmExecucao", new PagamentoAprovado(_osId, Guid.NewGuid(), 1250m));
 
         [When("o Mercado Pago recusa o pagamento")]
         public Task QuandoPagamentoRecusado() =>
-            PublicarAteStatusAsync(new PagamentoRecusado(_osId, Guid.NewGuid(), "cc_rejected_insufficient_amount"), "Cancelada");
+            PublicarAteStatusAsync("Cancelada", new PagamentoRecusado(_osId, Guid.NewGuid(), "cc_rejected_insufficient_amount"));
 
         [When("o Execution Service finaliza a execução")]
         public Task QuandoExecucaoFinalizada() =>
@@ -81,7 +81,10 @@ namespace OficinaMecanica.Tests.Bdd
 
         [When("o Billing Service confirma o estorno")]
         public Task QuandoEstornoConfirmado() =>
-            PublicarAteStatusAsync(new PagamentoEstornado(_osId, Guid.NewGuid()), "Cancelada");
+            // Reenvia também o ExecucaoFalhou: no teste ele pode chegar antes de a Saga gravar EmExecucao
+            // (em produção não, pois o Execution só recebe a OS depois desse estado ser gravado).
+            PublicarAteStatusAsync("Cancelada",
+                new ExecucaoFalhou(_osId, "Peça com defeito de fábrica"), new PagamentoEstornado(_osId, Guid.NewGuid()));
 
         [When("a recepção registra a entrega")]
         public async Task QuandoRegistraEntrega() =>
@@ -114,11 +117,12 @@ namespace OficinaMecanica.Tests.Bdd
         /// Eventos de outros serviços chegam de forma assíncrona; reenviar até o efeito aparecer imita a
         /// entrega at-least-once do RabbitMQ (a Saga ignora duplicatas).
         /// </summary>
-        private async Task PublicarAteStatusAsync<T>(T evento, string status) where T : class
+        private async Task PublicarAteStatusAsync(string status, params object[] eventos)
         {
-            for (var i = 0; i < 30; i++)
+            for (var i = 0; i < 50; i++)
             {
-                await _factory.PublicarAsync(evento);
+                foreach (var evento in eventos)
+                    await _factory.PublicarAsync(evento);
                 await Task.Delay(100);
                 if (await StatusAtualAsync() == status) return;
             }

@@ -105,8 +105,8 @@ namespace OficinaMecanica.Tests.Integration
         }
 
         /// <summary>Simula outro microsservico (Billing/Execution) publicando um evento no bus da API (transporte em memoria nos testes).</summary>
-        public Task PublicarAsync<T>(T mensagem) where T : class =>
-            Services.GetRequiredService<IBus>().Publish(mensagem);
+        public Task PublicarAsync(object mensagem) =>
+            Services.GetRequiredService<IBus>().Publish(mensagem); // overload object: publica pelo tipo real
 
         private sealed record TokenResponse(string Token);
     }

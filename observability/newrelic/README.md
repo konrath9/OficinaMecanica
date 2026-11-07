@@ -14,7 +14,9 @@ seção "Observabilidade" do README principal.
 
 ## O que este Terraform cria
 
-- `newrelic_one_dashboard` — 1 dashboard com 4 widgets: volume diário de OS, tempo médio de execução por status (Diagnóstico/Execução/Finalização), erros de integração, e latência das APIs (p50/p95 por rota).
+- `newrelic_one_dashboard` — 1 dashboard com 2 páginas:
+  - **Ordens de Serviço e API** (Fase 3): volume diário de OS, tempo médio de execução por status (Diagnóstico/Execução/Finalização), erros de integração, e latência das APIs (p50/p95 por rota).
+  - **Saga e microsserviços** (Fase 4): mensagens da Saga publicadas/consumidas por serviço e por tipo (spans do MassTransit), pagamentos aprovados/recusados/estornados (Billing), falhas e duração das execuções (Execution), erros e latência p95 por microsserviço.
 - `newrelic_synthetics_monitor` — healthcheck/uptime: pinga `http://<app_host>/health` a cada 5 minutos.
 - Duas alert policies (`newrelic_alert_policy` + `newrelic_nrql_alert_condition`), cada uma com seu próprio e-mail via `newrelic_notification_destination`/`newrelic_notification_channel`/`newrelic_workflow`:
   - **Falhas no processamento de OS**: erros de integração (ex.: envio de e-mail) acima do limite em 5 minutos, e erros HTTP 5xx nas rotas `/api/ordens-servico` e `/api/acompanhamento`.

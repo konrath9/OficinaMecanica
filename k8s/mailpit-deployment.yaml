@@ -15,6 +15,7 @@ spec:
       labels:
         app: mailpit
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: mailpit
           image: axllent/mailpit:latest
@@ -23,3 +24,11 @@ spec:
               name: smtp
             - containerPort: 8025
               name: http
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+              ephemeral-storage: "256Mi"

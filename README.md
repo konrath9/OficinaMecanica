@@ -1,5 +1,11 @@
 ﻿# 🔧 Oficina Mecânica - Sistema Integrado de Atendimento e Execução de Serviços
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=konrath9_OficinaMecanica&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=konrath9_OficinaMecanica)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=konrath9_OficinaMecanica&metric=coverage)](https://sonarcloud.io/summary/new_code?id=konrath9_OficinaMecanica)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=konrath9_OficinaMecanica&metric=bugs)](https://sonarcloud.io/summary/new_code?id=konrath9_OficinaMecanica)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=konrath9_OficinaMecanica&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=konrath9_OficinaMecanica)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=konrath9_OficinaMecanica&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=konrath9_OficinaMecanica)
+
 ## Objetivo 
 
 Back-end de uma oficina mecânica de médio porte, focado em **gestão de ordens de serviço, clientes, veículos, serviços e peças**, aplicando **Domain-Driven Design (DDD)** com boas práticas de qualidade de software e segurança.

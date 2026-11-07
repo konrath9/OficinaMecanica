@@ -15,6 +15,7 @@ spec:
       labels:
         app: oficina-mecanica-api
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: api
           image: ghcr.io/konrath9/oficinamecanica-api:latest

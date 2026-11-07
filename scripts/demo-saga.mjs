@@ -1,5 +1,9 @@
 // Demonstracao ponta a ponta da Saga entre os 3 microsservicos (usada no video da Fase 4).
-// Uso: node scripts/demo-saga.mjs [feliz|pagamento-recusado|falha-execucao]
+// Uso: node scripts/demo-saga.mjs [feliz|pagamento-recusado|falha-execucao|checkout|checkout-falha]
+//   feliz / pagamento-recusado / falha-execucao: o pagamento e resolvido pelo /simular do Billing.
+//   checkout / checkout-falha: para no link do Mercado Pago e espera voce pagar no navegador com o
+//   comprador de teste; a confirmacao chega pelo webhook e a demo continua (checkout-falha termina com
+//   estorno real no Mercado Pago).
 // Por padrao aponta para o docker-compose local; em producao, passe as URLs do Traefik:
 //   OS_URL=http://<K3S_HOST> BILLING_URL=http://<K3S_HOST> EXECUTION_URL=http://<K3S_HOST> node scripts/demo-saga.mjs
 const OS = process.env.OS_URL ?? 'http://localhost:5000';
@@ -83,6 +87,19 @@ const pagamento = await aguardar('pagamento criado', () => http('GET', `${BILLIN
 console.log(`  Pagamento: ${pagamento.status} - link: ${pagamento.linkPagamento}`);
 await statusOs(os.id);
 
+const checkoutReal = cenario.startsWith('checkout');
+if (checkoutReal) {
+  passo('Abra o link acima, entre com o COMPRADOR DE TESTE e pague (aguardando o webhook do Mercado Pago, até 10 min)');
+  const final = await aguardar('pagamento no Mercado Pago', async () => {
+    const s = await statusOs(os.id);
+    return (s === 'EmExecucao' || s === 'Cancelada') && s;
+  }, 600);
+  if (final === 'Cancelada') {
+    console.log('  Pagamento recusado no Mercado Pago -> Saga compensou e cancelou a OS');
+    process.exit(0);
+  }
+}
+
 if (cenario === 'pagamento-recusado') {
   passo('Mercado Pago RECUSA o pagamento -> compensação: cancela orçamento e OS');
   await http('POST', `${BILLING}/api/pagamentos/${os.id}/simular`, { aprovado: false, motivo: 'cc_rejected_insufficient_amount' });
@@ -96,7 +113,7 @@ if (cenario === 'pagamento-recusado') {
 }
 
 passo('Mercado Pago aprova -> Saga publica IniciarExecucao -> Execution Service (MongoDB)');
-await http('POST', `${BILLING}/api/pagamentos/${os.id}/simular`, { aprovado: true });
+if (!checkoutReal) await http('POST', `${BILLING}/api/pagamentos/${os.id}/simular`, { aprovado: true });
 await aguardarStatus(os.id, 'EmExecucao');
 const exec = await aguardar('OS na fila de execução', () => http('GET', `${EXECUTION}/api/execucoes/${os.id}`));
 console.log(`  Execução: ${exec.status}`);
@@ -106,7 +123,7 @@ await http('POST', `${EXECUTION}/api/execucoes/${os.id}/iniciar-diagnostico`);
 await http('POST', `${EXECUTION}/api/execucoes/${os.id}/iniciar-reparo`);
 await http('PUT', `${EXECUTION}/api/execucoes/${os.id}/servicos/${servicoId}/iniciar`);
 
-if (cenario === 'falha-execucao') {
+if (cenario === 'falha-execucao' || cenario === 'checkout-falha') {
   passo('Execução FALHA -> compensação: Billing estorna o pagamento -> OS cancelada');
   await http('POST', `${EXECUTION}/api/execucoes/${os.id}/falha`, { motivo: 'Disco de freio empenado - peça indisponível' });
   await aguardarStatus(os.id, 'Cancelada');

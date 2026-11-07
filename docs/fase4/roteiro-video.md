@@ -34,6 +34,11 @@ for c in feliz pagamento-recusado falha-execucao feliz feliz; do
 done
 ```
 
+**0.2b. Comprador de teste do Mercado Pago.** Em mercadopago.com.br/developers → sua aplicação → **Contas de teste**,
+crie uma conta **Comprador** e anote o usuário e a senha. Os cartões de teste ficam na página **Cartões de teste** da
+documentação. O nome do titular define o resultado: `APRO` = aprovado, `OTHE` = recusado. Faça um pagamento de ensaio
+com `node scripts/demo-saga.mjs checkout` antes de gravar.
+
 **0.3. Preparar o PR que você vai mergear ao vivo (Parte 3)** no **Billing Service**:
 ```bash
 cd /d/ProjetosVSS/Pós/oficina-billing-service
@@ -142,10 +147,14 @@ Volte ao run do merge. Se já tiver passado da etapa de testes, mostre-a verde. 
 > aprovar-orcamento, estornar-pagamento e iniciar-execucao, e a fila da própria Saga, ordem-servico-saga-state, onde
 > chegam as respostas do Billing e do Execution."
 
-**T1:**
+**T1**, com **pagamento real no sandbox do Mercado Pago**:
 ```bash
-OS_URL=$H BILLING_URL=$H EXECUTION_URL=$H node scripts/demo-saga.mjs feliz
+OS_URL=$H BILLING_URL=$H EXECUTION_URL=$H node scripts/demo-saga.mjs checkout
 ```
+Quando o script imprimir o link de pagamento, abra-o no navegador, entre com o **comprador de teste** e pague com um
+cartão de teste, com o nome do titular **APRO**. O Mercado Pago chama o webhook do Billing e o script continua sozinho.
+Se o webhook não chegar em 1 a 2 minutos (o ambiente é `http`), use o plano B: rode o cenário `feliz`, que confirma o
+pagamento pelo `/simular`, e diga na narração que é a confirmação simulada.
 
 Narre conforme as linhas aparecem. O script imprime o status da OS **e** o estado da Saga a cada passo:
 > "Abrimos uma OS no **OS Service** com um serviço e uma peça.
@@ -233,7 +242,7 @@ Volte ao **Actions** do Billing (Parte 3):
 |---|---|
 | Produção (Traefik) | `http://32.193.30.44` · Swagger: `/swagger`, `/billing/swagger`, `/execucao/swagger` |
 | Login por CPF (Lambda) | `https://vmdccz407g.execute-api.us-east-1.amazonaws.com/auth/login` |
-| Demo da saga | `node scripts/demo-saga.mjs [feliz \| pagamento-recusado \| falha-execucao]` |
+| Demo da saga | `node scripts/demo-saga.mjs [feliz \| pagamento-recusado \| falha-execucao \| checkout \| checkout-falha]` (`checkout*` = pagamento real no Mercado Pago) |
 | Estado da saga de uma OS | `GET /api/ordens-servico/{id}/saga` |
 | RabbitMQ UI | `http://localhost:15672` (via túnel do passo 0.4), usuário `oficina` |
 

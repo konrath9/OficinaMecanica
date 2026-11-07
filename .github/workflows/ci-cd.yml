@@ -226,6 +226,8 @@ jobs:
             kubectl apply -f /tmp/oficina-mecanica-k8s/rabbitmq.yaml
             kubectl rollout status deployment/rabbitmq -n oficina-mecanica --timeout=180s
             kubectl apply -f /tmp/oficina-mecanica-k8s/
+            # Secret muda sem mudar a imagem: reinicia para os pods lerem os valores novos
+            kubectl rollout restart deployment/oficina-mecanica-api -n oficina-mecanica
             kubectl rollout status deployment/oficina-mecanica-api -n oficina-mecanica --timeout=180s
             kubectl rollout status deployment/mailpit -n oficina-mecanica --timeout=120s
           '

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tech Challenge Fase 4 — Oficina Mecânica</title>
+<!-- Fonte do PDF de entrega. Gerar com:
+     "/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" --headless --disable-gpu --no-pdf-header-footer \
+       --virtual-time-budget=15000 --print-to-pdf="docs/fase4/entrega-fase4.pdf" "file:///<caminho>/docs/fase4/entrega-fase4.html" -->
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1d1d1f; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #c8102e; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 6px; break-after: avoid; }
+  p { margin: 6px 0; }
+  .sub { color: #555; font-size: 11pt; margin-bottom: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border: 1px solid #ccc; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #f2f2f4; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f2f2f4; padding: 0 3px; border-radius: 3px; }
+  a { color: #0b57d0; text-decoration: none; word-break: break-all; }
+  .pendente { background: #fff3b0; padding: 0 4px; font-weight: 600; }
+  .diagrama { border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin: 8px 0; text-align: center; break-inside: avoid; }
+  .diagrama svg { max-width: 100%; height: auto; }
+  .diagrama.arq svg { width: auto !important; height: 92mm !important; max-width: 100% !important; }
+  .capa { border-left: 6px solid #c8102e; padding-left: 14px; margin-bottom: 18px; }
+  ul { margin: 6px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .quebra { break-before: page; }
+</style>
+</head>
+<body>
+
+<div class="capa">
+  <h1>Oficina Mecânica — Microsserviços e Saga Pattern</h1>
+  <div class="sub">POS TECH · Software Architecture · Tech Challenge — Fase 4</div>
+</div>
+
+<h2>1. Identificação</h2>
+<table>
+  <tr><th style="width:30%">Participante</th><th>RM</th><th>Contato</th></tr>
+  <tr><td>Taynan Konrath</td><td><span class="pendente">RM a preencher</span></td><td>taynan@lara.app.br</td></tr>
+</table>
+
+<h2>2. Links</h2>
+<h3>Vídeo de demonstração (até 15 min)</h3>
+<p><span class="pendente">link do vídeo a preencher</span></p>
+
+<h3>Repositórios dos microsserviços</h3>
+<table>
+  <tr><th style="width:24%">Microsserviço</th><th>Repositório</th><th style="width:22%">Banco de dados</th></tr>
+  <tr><td>OS Service (orquestrador da Saga)</td><td><a href="https://github.com/konrath9/OficinaMecanica">github.com/konrath9/OficinaMecanica</a></td><td>PostgreSQL (relacional)</td></tr>
+  <tr><td>Billing Service</td><td><a href="https://github.com/konrath9/oficina-billing-service">github.com/konrath9/oficina-billing-service</a></td><td>PostgreSQL (relacional)</td></tr>
+  <tr><td>Execution Service</td><td><a href="https://github.com/konrath9/oficina-execution-service">github.com/konrath9/oficina-execution-service</a></td><td>MongoDB (NoSQL)</td></tr>
+</table>
+
+<h3>Repositórios de infraestrutura e autenticação (fases anteriores, reaproveitados)</h3>
+<table>
+  <tr><th style="width:32%">Repositório</th><th>Conteúdo</th></tr>
+  <tr><td><a href="https://github.com/konrath9/oficina-mecanica-infra-k8s">oficina-mecanica-infra-k8s</a></td><td>Terraform do cluster Kubernetes (k3s em EC2 t3.medium, AWS)</td></tr>
+  <tr><td><a href="https://github.com/konrath9/oficina-mecanica-infra-db">oficina-mecanica-infra-db</a></td><td>Terraform da VPC e do RDS PostgreSQL</td></tr>
+  <tr><td><a href="https://github.com/konrath9/oficina-mecanica-auth">oficina-mecanica-auth</a></td><td>Lambda de autenticação por CPF (emite o JWT) + API Gateway</td></tr>
+</table>
+
+<h3>Documentação técnica (no repositório do OS Service)</h3>
+<ul>
+  <li>README, seção Fase 4: <a href="https://github.com/konrath9/OficinaMecanica#fase-4--microsserviços-e-saga-pattern">github.com/konrath9/OficinaMecanica</a></li>
+  <li>Contratos de mensageria: <a href="https://github.com/konrath9/OficinaMecanica/blob/master/docs/fase4/contratos-mensageria.md">docs/fase4/contratos-mensageria.md</a></li>
+  <li>ADR da Saga: <a href="https://github.com/konrath9/OficinaMecanica/blob/master/docs/adr/0005-saga-orquestrada-com-masstransit.md">docs/adr/0005-saga-orquestrada-com-masstransit.md</a></li>
+  <li>Swagger de cada serviço: <code>/swagger</code> (OS), <code>/billing/swagger</code>, <code>/execucao/swagger</code></li>
+</ul>
+
+<h2 class="quebra">3. Arquitetura geral</h2>
+<p>Três microsserviços independentes, cada um com repositório, banco, pipeline de CI/CD e deploy no Kubernetes próprios.
+Nenhum serviço acessa o banco de outro: o cliente fala com os serviços por REST (síncrono, pelo Traefik), e entre eles
+a comunicação é assíncrona, por mensagens no RabbitMQ.</p>
+<div class="diagrama arq"><pre class="mermaid">
+flowchart LR
+    C["Cliente / Staff"] -->|HTTP| GW["Traefik<br/>(Ingress / API Gateway)"]
+    LAMBDA["Lambda auth<br/>(CPF → JWT)"] -.JWT.-> OS
+    GW -->|/api/*| OS["OS Service<br/>(orquestrador da Saga)"]
+    GW -->|/api/orcamentos, /api/pagamentos| BI["Billing Service"]
+    GW -->|/api/execucoes| EX["Execution Service"]
+    OS <-->|comandos / eventos| MQ[["RabbitMQ"]]
+    BI <--> MQ
+    EX <--> MQ
+    OS --- PG1[("PostgreSQL<br/>oficina_mecanica<br/>+ saga + outbox")]
+    BI --- PG2[("PostgreSQL<br/>oficina_billing<br/>+ outbox")]
+    EX --- MG[("MongoDB<br/>oficina_execucao")]
+    BI -->|Checkout Pro / refund| MP["Mercado Pago"]
+    OS & BI & EX -.OTLP.-> NR["New Relic"]
+</pre></div>
+
+<table>
+  <tr><th style="width:18%">Serviço</th><th>Responsabilidade</th><th style="width:30%">Expõe / consome</th></tr>
+  <tr><td><b>OS Service</b></td><td>Abertura da OS, status e histórico, clientes, veículos, catálogo de serviços e peças, login de staff. Orquestra a Saga e notifica o cliente por e-mail a cada mudança de status.</td><td>REST para cliente e staff; publica comandos e consome eventos da Saga</td></tr>
+  <tr><td><b>Billing Service</b></td><td>Geração do orçamento, cobrança via Mercado Pago (Checkout Pro, webhook validado na API do MP), estorno.</td><td>REST de consulta, simulação e webhook; consome comandos de orçamento e pagamento</td></tr>
+  <tr><td><b>Execution Service</b></td><td>Fila de execução priorizada, diagnóstico e reparo serviço a serviço, finalização ou registro de falha.</td><td>REST para o mecânico; consome comandos de execução</td></tr>
+</table>
+
+<h3>Infraestrutura</h3>
+<ul>
+  <li><b>Kubernetes</b>: k3s na AWS (EC2 t3.medium, provisionado por Terraform), namespace único, Traefik como ingress, HPA nas APIs.</li>
+  <li><b>Mensageria</b>: RabbitMQ no próprio cluster; MassTransit 8 nos três serviços.</li>
+  <li><b>Bancos</b>: RDS PostgreSQL com um database por serviço relacional (<code>oficina_mecanica</code>, <code>oficina_billing</code>) e MongoDB em StatefulSet para o Execution.</li>
+  <li><b>Observabilidade</b> (a mesma da Fase 3): OpenTelemetry → New Relic, com traces distribuídos (o contexto viaja dentro das mensagens), métricas de negócio, logs JSON com correlation id e dashboard provisionado por Terraform.</li>
+</ul>
+
+<h2 class="quebra">4. Saga Pattern — estratégia escolhida: orquestração</h2>
+<p>A Saga coordena a transação distribuída <i>abrir OS → orçar → aprovar → pagar → executar → finalizar</i>, que passa por
+três bancos diferentes. O orquestrador é uma state machine do MassTransit dentro do OS Service
+(<code>OrdemServicoStateMachine.cs</code>), com o estado persistido na tabela <code>saga_ordem_servico</code>.</p>
+<div class="diagrama"><pre class="mermaid">
+stateDiagram-v2
+    [*] --> AguardandoOrcamento: diagnóstico concluído / GerarOrcamento
+    AguardandoOrcamento --> AguardandoAprovacao: OrcamentoGerado
+    AguardandoOrcamento --> FalhaOrcamento: OrcamentoFalhou
+    AguardandoAprovacao --> AguardandoPagamento: cliente aprova / AprovarOrcamento
+    AguardandoAprovacao --> Cancelada: cliente reprova / CancelarOrcamento
+    AguardandoPagamento --> EmExecucao: PagamentoAprovado / IniciarExecucao
+    AguardandoPagamento --> Cancelada: PagamentoRecusado / CancelarOrcamento
+    EmExecucao --> Finalizada: ExecucaoFinalizada
+    EmExecucao --> Estornando: ExecucaoFalhou / EstornarPagamento
+    Estornando --> Cancelada: PagamentoEstornado
+</pre></div>
+
+<h3>Rollback e compensação em cada etapa</h3>
+<table>
+  <tr><th style="width:38%">Falha</th><th>Compensação comandada pelo orquestrador</th></tr>
+  <tr><td>Billing não consegue gerar o orçamento</td><td>A OS permanece em diagnóstico, com a falha registrada no histórico; o técnico pode reenviar.</td></tr>
+  <tr><td>Cliente reprova, ou staff cancela antes do pagamento</td><td><code>CancelarOrcamento</code> no Billing.</td></tr>
+  <tr><td>Pagamento recusado pelo Mercado Pago</td><td><code>CancelarOrcamento</code> e OS cancelada, com o motivo.</td></tr>
+  <tr><td>Falha durante a execução (ex.: peça indisponível)</td><td><code>EstornarPagamento</code> (refund no Mercado Pago); a OS só é cancelada após a confirmação do estorno.</td></tr>
+  <tr><td>Staff cancela a OS em execução</td><td><code>CancelarExecucao</code> + <code>EstornarPagamento</code>.</td></tr>
+</table>
+
+<h3>Garantias de consistência</h3>
+<ul>
+  <li><b>Outbox transacional</b>: a mudança na OS, o estado da Saga e as mensagens a publicar são gravados no mesmo <code>SaveChanges</code>. Uma queda entre gravar e publicar não perde nem duplica mensagens.</li>
+  <li><b>Idempotência</b>: o RabbitMQ entrega "pelo menos uma vez"; os consumers e as ações da Saga são idempotentes por <code>OrdemServicoId</code>, e o inbox deduplica as mensagens recebidas.</li>
+  <li><b>Retry</b>: três novas tentativas com intervalo; esgotadas, a mensagem vai para a fila <code>_error</code>.</li>
+</ul>
+
+<h3>Por que orquestração e não coreografia</h3>
+<ul>
+  <li>O fluxo da OS é <b>sequencial e tem um dono natural</b> (o OS Service, que já era o dono do status). Com coreografia, a sequência ficaria implícita, espalhada em handlers de três repositórios.</li>
+  <li><b>Compensação centralizada</b>: regras como "se a execução falhar, estorne e só depois cancele" ficam legíveis num único arquivo.</li>
+  <li><b>Participantes simples</b>: Billing e Execution só recebem um comando e publicam o resultado, sem conhecer o fluxo.</li>
+  <li><b>Observabilidade</b>: o estado da Saga de cada OS é consultável (<code>GET /api/ordens-servico/{id}/saga</code>) e o trace distribuído mostra a cadeia completa.</li>
+  <li><b>Custo aceito</b>: o OS Service vira ponto central do fluxo. Mitigado porque as mensagens ficam enfileiradas no RabbitMQ enquanto ele está fora e a Saga retoma de onde parou.</li>
+</ul>
+
+<h2>5. Justificativa da divisão dos microsserviços</h2>
+<ul>
+  <li><b>Fronteiras por capacidade de negócio</b>, seguindo as áreas da oficina citadas no desafio: atendimento (OS), cobrança (Billing) e produção (Execution). Cada uma muda por motivos diferentes e escala de forma diferente: a fila de execução tem picos próprios, e o pagamento depende de um terceiro (Mercado Pago).</li>
+  <li><b>Isolamento de falhas</b>: uma indisponibilidade do Mercado Pago afeta só o Billing; as mensagens esperam no RabbitMQ e o resto do sistema segue atendendo.</li>
+  <li><b>Dono único de cada dado</b>: o status oficial da OS é do OS Service; orçamento e pagamento, do Billing; o andamento do reparo, do Execution. Nenhum serviço lê o banco de outro.</li>
+</ul>
+
+<h2>6. Tecnologias e justificativas</h2>
+<table>
+  <tr><th style="width:24%">Tecnologia</th><th>Uso e justificativa</th></tr>
+  <tr><td>.NET 8 (C#)</td><td>Mesma base das fases anteriores: LTS, alto desempenho, ecossistema maduro para APIs.</td></tr>
+  <tr><td>PostgreSQL (OS e Billing)</td><td>Dados transacionais e relacionais (OS ↔ cliente ↔ veículo; orçamento ↔ pagamento). O outbox precisa de transação ACID.</td></tr>
+  <tr><td>MongoDB (Execution)</td><td>A execução é um agregado autocontido (serviços, tempos e histórico aninhados), lido e gravado inteiro, sem joins; o esquema evolui por tipo de reparo. Atende ao requisito de banco NoSQL.</td></tr>
+  <tr><td>RabbitMQ + MassTransit 8</td><td>Broker leve, executado dentro do próprio cluster. O MassTransit entrega state machine de Saga, outbox/inbox, retry e propagação de trace prontos. Usa-se a versão 8 (licença Apache 2.0).</td></tr>
+  <tr><td>Mercado Pago (Checkout Pro)</td><td>Integração de pagamento exigida. Criação da preferência, webhook validado consultando a API do MP e estorno. Um gateway fake é usado em desenvolvimento e CI.</td></tr>
+  <tr><td>Kubernetes (k3s) + Traefik</td><td>Orquestração já usada nas fases anteriores; um Ingress por serviço, roteado por prefixo de caminho.</td></tr>
+  <tr><td>GitHub Actions</td><td>Pipeline independente por repositório: build → testes com gate de cobertura de 80% → SonarCloud → imagem no GHCR → deploy em cluster efêmero (kind) com smoke test → deploy em produção.</td></tr>
+  <tr><td>xUnit, Moq, Reqnroll (BDD)</td><td>Testes unitários e de integração nos três serviços; BDD em Gherkin cobrindo o fluxo completo da Saga e as compensações.</td></tr>
+  <tr><td>SonarCloud</td><td>Validação de qualidade de código no CI de cada serviço.</td></tr>
+  <tr><td>New Relic + OpenTelemetry</td><td>Ferramenta de observabilidade da Fase 3, estendida com traces distribuídos entre os serviços e um painel dedicado à Saga.</td></tr>
+</table>
+
+<h2>7. Testes e qualidade</h2>
+<table>
+  <tr><th>Serviço</th><th>Testes automatizados</th><th>Cobertura de linhas</th></tr>
+  <tr><td>OS Service</td><td>374 (unitários, integração e 4 cenários BDD)</td><td>89%</td></tr>
+  <tr><td>Billing Service</td><td>48 (unitários e integração)</td><td>97%</td></tr>
+  <tr><td>Execution Service</td><td>30 (unitários e integração)</td><td>94%</td></tr>
+</table>
+<p>O pipeline falha abaixo de 80% de cobertura. As branches principais dos três repositórios são protegidas: merge somente
+via Pull Request, com o check de build e testes obrigatório.</p>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral", flowchart: { htmlLabels: true }, securityLevel: "loose" });</script>
+</html>

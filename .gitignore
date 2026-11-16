@@ -378,3 +378,9 @@ override.tf.json
 *_override.tf.json
 .terraform.tfstate.lock.info
 infra/*-config
+
+# Material de entrega e uso pessoal (roteiro do video, PDF do portal, retomada do Learner Lab) - fica so local
+docs/roteiro-video.md
+docs/fase4/roteiro-video.md
+docs/fase4/entrega-fase4.*
+scripts/retomar-ambiente.sh

@@ -99,7 +99,8 @@ jobs:
 
       - name: Instalar kind CLI
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
+          # --proto-redir: segue redirecionamento so para HTTPS (o download vai para o GitHub Releases)
+          curl -fsSL --proto '=https' --proto-redir '=https' -o ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
           kind version

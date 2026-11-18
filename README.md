@@ -423,7 +423,8 @@ A especificação completa da API é publicada via Swagger/OpenAPI:
 
 ## Vídeo Demonstrativo
 
-[https://youtu.be/MJO8dSwz9To](https://youtu.be/MJO8dSwz9To) — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
+- **Fase 4:** [https://youtu.be/2zP1ZDblgIQ](https://youtu.be/2zP1ZDblgIQ) — fluxo completo da OS pelos três microsserviços (com pagamento no Mercado Pago), Saga com compensações (pagamento recusado e estorno), deploy automatizado com validação de testes e rastreamento distribuído no New Relic.
+- **Fase 2:** [https://youtu.be/MJO8dSwz9To](https://youtu.be/MJO8dSwz9To) — demonstração do deploy, execução do CI/CD, consumo das APIs e escalabilidade automática (HPA).
 
 ## Documentação da Arquitetura
 
